@@ -7,7 +7,9 @@
     "scheme": "volleyapp",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0b1120",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "ru.volleyhub.app",
@@ -21,8 +23,7 @@
       "package": "ru.volleyhub.app",
       "adaptiveIcon": {
         "backgroundColor": "#0b1120"
-      },
-      "edgeToEdgeEnabled": true
+      }
     },
     "web": {
       "bundler": "metro"
@@ -33,7 +34,8 @@
         {
           "photosPermission": "Приложению нужен доступ к фото, чтобы загрузить аватар профиля."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "extra": {}
   }
