@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "VolleyApp",
+    "slug": "volley-hub-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "volleyapp",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0b1120",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "ru.volleyhub.app",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Приложению нужен доступ к фото, чтобы загрузить аватар профиля.",
+        "NSCameraUsageDescription": "Приложению нужен доступ к камере, чтобы сделать фото профиля.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "ru.volleyhub.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0b1120"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Приложению нужен доступ к фото, чтобы загрузить аватар профиля."
+        }
+      ]
+    ],
+    "extra": {}
+  }
+}

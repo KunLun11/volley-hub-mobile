@@ -1,0 +1,29 @@
+# Зависимости
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Нативные сборки
+android/
+ios/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# Окружение и логи
+.env
+.env.local
+*.log
+npm-debug.*
+yarn-error.*
+
+# ОС / редакторы
+.DS_Store
+.idea/
+.vscode/
