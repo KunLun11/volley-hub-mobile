@@ -6,8 +6,8 @@
   "description": "VolleyApp — мобильное приложение (React Native + Expo + TypeScript)",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "build:android:preview": "eas build -p android --profile preview",

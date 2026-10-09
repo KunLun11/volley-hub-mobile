@@ -129,20 +129,63 @@ eas submit -p android --latest
 eas submit -p ios --latest
 ```
 
-### Вариант B. Локальная нативная сборка (нужны Android Studio / Xcode)
+### Вариант B. Локальная сборка APK (Linux, проверено)
+
+Требования: **Android SDK** (ставится вместе с Android Studio) и **JDK 17**.
+React Native 0.76 / Expo SDK 52 **не собираются на JDK 21+** (Gradle 8.10 их не
+поддерживает). JDK, встроенный в свежие Android Studio (`.../android-studio/jbr`),
+может быть Java 25 — в этом случае нужен отдельный JDK 17.
+
+Скачать портативный JDK 17 (без sudo):
 
 ```bash
-npx expo prebuild            # сгенерировать папки android/ и ios/
-npx expo run:android         # сборка и запуск на эмуляторе/устройстве
-npx expo run:ios             # только на macOS с Xcode
+mkdir -p ~/jdk && cd ~/jdk
+curl -L --fail -o jdk17.tar.gz \
+  "https://api.adoptium.net/v3/binary/latest/17/ga/linux/x64/jdk/hotspot/normal/eclipse"
+tar xzf jdk17.tar.gz && rm jdk17.tar.gz
 ```
 
-Готовый APK без EAS:
+Настроить окружение и сгенерировать нативный проект:
 
 ```bash
-cd android && ./gradlew assembleRelease
+cd volley-hub-mobile
+export JAVA_HOME=$(ls -d ~/jdk/jdk-17*)      # именно JDK 17, НЕ jbr от Android Studio
+export ANDROID_HOME=~/Android/Sdk
+export ANDROID_SDK_ROOT=$ANDROID_HOME
+export PATH="$JAVA_HOME/bin:$ANDROID_HOME/platform-tools:$PATH"
+
+npx expo prebuild -p android
+echo "sdk.dir=$ANDROID_HOME" > android/local.properties
+```
+
+Собрать APK:
+
+```bash
+cd android
+./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
 # → android/app/build/outputs/apk/release/app-release.apk
 ```
+
+- `-PreactNativeArchitectures` ограничивает набор ABI. `arm64-v8a,armeabi-v7a`
+  покрывают все реальные телефоны; `x86`/`x86_64` нужны только эмулятору.
+  Без флага соберутся все 4 архитектуры — заметно дольше и больше по размеру.
+- Первый запуск скачивает Gradle, зависимости и NDK 26.1 (~10–12 минут).
+- Релизный APK подписывается debug-keystore (`android/app/debug.keystore`). Это
+  нормально для ручной установки, но **не для Google Play** — там нужен свой
+  keystore и формат `.aab` (профиль `production` в EAS).
+
+Установка на телефон:
+
+```bash
+# по USB (включите «Отладка по USB»):
+adb install -r android/app/build/outputs/apk/release/app-release.apk
+
+# либо отдать файл по локальной сети — открыть ссылку в браузере телефона:
+cd android/app/build/outputs/apk/release && python3 -m http.server 8080
+#   http://<IP-компьютера>:8080/app-release.apk
+```
+
+При установке вручную разрешите «Установка из неизвестных источников».
 
 ### Вариант C. Быстрая проверка без установки нативных инструментов
 
