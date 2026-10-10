@@ -143,6 +143,8 @@ export interface PlayerProfile {
   completion_percentage: number;
   total_games: number;
   total_tournament: number;
+  /** true — профиль игрока уже создан на бэкенде (онбординг пройден). */
+  has_profile?: boolean;
 }
 
 export interface GameList {

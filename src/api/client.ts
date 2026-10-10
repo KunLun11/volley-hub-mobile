@@ -295,9 +295,10 @@ export const api = {
     request<MeSchema>('/users/me/').then(async (me) => {
       try {
         const prof = await request<Record<string, any>>(`/profiles/users/${me.id}/profile/`);
-        return adaptProfile(prof, me);
+        return { ...adaptProfile(prof, me), has_profile: true };
       } catch {
-        return adaptProfile({}, me);
+        // профиль ещё не создан (онбординг не пройден)
+        return { ...adaptProfile({}, me), has_profile: false };
       }
     }),
 

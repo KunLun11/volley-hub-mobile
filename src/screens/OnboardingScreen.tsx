@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
@@ -29,6 +29,20 @@ export default function OnboardingScreen() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Онбординг показываем РОВНО ОДИН РАЗ: если профиль уже создан — уходим в табы.
+  useEffect(() => {
+    let alive = true;
+    api
+      .me()
+      .then((prof) => {
+        if (alive && prof.has_profile) nav.reset({ index: 0, routes: [{ name: 'Tabs' }] });
+      })
+      .catch(() => undefined);
+    return () => {
+      alive = false;
+    };
+  }, [nav]);
 
   const filled = useMemo(() => {
     const checks = [
