@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "main": "index.ts",
-  "description": "VolleyApp — мобильное приложение (React Native + Expo + TypeScript)",
+  "description": "VolleyHub — мобильное приложение (React Native + Expo + TypeScript)",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",
@@ -16,6 +16,7 @@
     "build:ios:prod": "eas build -p ios --profile production"
   },
   "dependencies": {
+    "@expo/vector-icons": "^14.0.0",
     "@react-native-async-storage/async-storage": "1.23.1",
     "@react-navigation/bottom-tabs": "^7.0.0",
     "@react-navigation/native": "^7.0.0",
@@ -24,6 +25,7 @@
     "expo-asset": "~11.0.5",
     "expo-clipboard": "~7.0.0",
     "expo-constants": "~17.0.8",
+    "expo-font": "~13.0.4",
     "expo-image-picker": "~16.0.0",
     "expo-status-bar": "~2.0.0",
     "react": "18.3.1",

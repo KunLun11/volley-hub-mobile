@@ -18,7 +18,7 @@ import {
 } from '../components/ui';
 import { Field, Input, RadioPills, Select, TextArea } from '../components/form';
 import { useToast } from '../store';
-import { colors, spacing } from '../theme';
+import { colors, fontMono, spacing } from '../theme';
 
 /** В1. Создание игры -> POST /games/ */
 export default function CreateGameScreen() {
@@ -239,5 +239,5 @@ const styles = StyleSheet.create({
   preview: { gap: spacing.sm, padding: spacing.lg },
   previewTitle: { color: colors.textMain, fontSize: 17, fontWeight: '600' },
   previewMeta: { color: colors.textSub, fontSize: 13 },
-  price: { color: colors.accent, fontSize: 18, fontWeight: '700' },
+  price: { color: colors.gold, fontSize: 16, fontWeight: '700', fontFamily: fontMono },
 });

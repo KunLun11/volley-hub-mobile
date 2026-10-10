@@ -14,7 +14,7 @@ import {
   contentStyle,
   formatMoney,
 } from '../components/ui';
-import { colors, spacing } from '../theme';
+import { colors, fontMono, spacing } from '../theme';
 import { useToast } from '../store';
 
 /** Б4. Мои игры -> GET /games/my-games/ */
@@ -116,5 +116,5 @@ export default function MyGamesScreen() {
 const styles = StyleSheet.create({
   h1: { color: colors.textMain, fontSize: 28, fontWeight: '700' },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  metaText: { color: colors.accent, fontWeight: '700' },
+  metaText: { color: colors.gold, fontWeight: '700', fontFamily: fontMono },
 });

@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, radius, spacing } from '../theme';
@@ -31,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
-      <View style={[styles.stack, { bottom: insets.bottom + spacing.xxl }]} pointerEvents="box-none">
+      <View style={[styles.stack, { bottom: insets.bottom + 92 }]} pointerEvents="box-none">
         {toasts.map((t) => (
           <ToastView key={t.id} toast={t} />
         ))}
@@ -45,20 +46,20 @@ function ToastView({ toast }: { toast: ToastItem }) {
   React.useEffect(() => {
     Animated.timing(anim, { toValue: 1, duration: 250, useNativeDriver: true }).start();
   }, [anim]);
-  const icon = toast.kind === 'success' ? '✅' : toast.kind === 'error' ? '⛔' : 'ℹ️';
-  const accent = toast.kind === 'success' ? colors.success : toast.kind === 'error' ? colors.danger : colors.primary;
+  const icon =
+    toast.kind === 'success' ? 'check' : toast.kind === 'error' ? 'alert-outline' : 'information-outline';
+  const accent = toast.kind === 'success' ? colors.success : toast.kind === 'error' ? colors.danger : colors.accent;
   return (
     <Animated.View
       style={[
         styles.toast,
-        { borderLeftColor: accent },
         {
           opacity: anim,
           transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [20, 0] }) }],
         },
       ]}
     >
-      <Text style={styles.icon}>{icon}</Text>
+      <MaterialCommunityIcons name={icon} size={17} color={accent} />
       <Text style={styles.text}>{toast.text}</Text>
     </Animated.View>
   );
@@ -80,10 +81,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderLeftWidth: 3,
+    borderColor: colors.border2,
   },
-  icon: { fontSize: 16 },
   text: { color: colors.textMain, fontSize: 14, flex: 1 },
 });
 

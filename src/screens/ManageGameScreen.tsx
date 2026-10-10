@@ -19,7 +19,7 @@ import {
   formatMoney,
 } from '../components/ui';
 import { useToast } from '../store';
-import { colors, radius, spacing } from '../theme';
+import { colors, fontMono, radius, spacing } from '../theme';
 
 interface ParticipantLite {
   id: number;
@@ -93,7 +93,7 @@ export default function ManageGameScreen() {
             <Text style={styles.meta}>
               Оплатили <Text style={{ color: colors.success, fontWeight: '700' }}>{paid}</Text> из{' '}
               <Text style={{ fontWeight: '700' }}>{total}</Text> записанных · собрано ≈{' '}
-              <Text style={{ color: colors.accent, fontWeight: '700' }}>
+              <Text style={{ color: colors.gold, fontWeight: '700', fontFamily: fontMono }}>
                 {(paid * (detail.price ?? 0)).toLocaleString('ru-RU')} ₽
               </Text>
             </Text>

@@ -1,12 +1,13 @@
 {
   "expo": {
-    "name": "VolleyApp",
+    "name": "VolleyHub",
     "slug": "volley-hub-mobile",
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "volleyapp",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#0b1120",
+    "icon": "./assets/icon.png",
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -22,11 +23,13 @@
     "android": {
       "package": "ru.volleyhub.app",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0b1120"
       }
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       [
@@ -35,7 +38,8 @@
           "photosPermission": "Приложению нужен доступ к фото, чтобы загрузить аватар профиля."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      "expo-font"
     ],
     "extra": {}
   }

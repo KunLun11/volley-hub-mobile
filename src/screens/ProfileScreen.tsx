@@ -10,6 +10,7 @@ import {
   Btn,
   Card,
   EmptyState,
+  Icon,
   Skeleton,
   contentStyle,
 } from '../components/ui';
@@ -17,7 +18,16 @@ import { Field, Input, RadioPills, Select } from '../components/form';
 import { pickImageDataUri } from '../lib/image';
 import { useAuth, useToast } from '../store';
 import { useNavigation } from '@react-navigation/native';
-import { colors, radius, spacing } from '../theme';
+import { colors, fontMono, radius, spacing } from '../theme';
+
+/** Ранги по ELO (янтарь = данные, brand-spec.md) */
+const TIERS = [
+  { name: 'Бронза', min: 0, max: 1200 },
+  { name: 'Серебро', min: 1200, max: 1500 },
+  { name: 'Золото', min: 1500, max: 1800 },
+  { name: 'Платина', min: 1800, max: 2100 },
+  { name: 'Алмаз', min: 2100, max: 2600 },
+];
 
 /** Б5. Профиль -> GET /users/me/ + PATCH profiles/... */
 export default function ProfileScreen() {
@@ -134,6 +144,15 @@ export default function ProfileScreen() {
 
   const name = `${p.first_name} ${p.last_name}`.trim() || 'Игрок';
 
+  /* ELO -> тир + подуровень (III/II/I) + прогресс до следующего */
+  const tierIdxRaw = TIERS.findIndex((t) => p.elo_rating < t.max);
+  const tierIdx = tierIdxRaw === -1 ? TIERS.length - 1 : tierIdxRaw;
+  const tier = TIERS[tierIdx];
+  const nextTier = TIERS[tierIdx + 1];
+  const tierPct = Math.min(1, Math.max(0, (p.elo_rating - tier.min) / (tier.max - tier.min)));
+  const roman = tierPct < 0.34 ? 'III' : tierPct < 0.67 ? 'II' : 'I';
+  const rankName = `${tier.name} ${roman}`;
+
   return (
     <ScrollView contentContainerStyle={contentStyle} keyboardShouldPersistTaps="handled">
       <Text style={styles.h1}>Профиль</Text>
@@ -161,6 +180,34 @@ export default function ProfileScreen() {
         <Btn kind="secondary" small onPress={() => setEditing((e) => !e)}>
           {editing ? 'Отмена' : 'Изменить'}
         </Btn>
+      </Card>
+
+      <Card style={styles.rank}>
+        <View style={styles.rankTop}>
+          <View style={styles.rankBadge}>
+            <View style={styles.rankIc}>
+              <Icon name="medal-outline" size={26} color={colors.gold} />
+            </View>
+            <View>
+              <Text style={styles.rankName}>{rankName}</Text>
+              <Text style={styles.rankSub}>
+                {nextTier ? `до ${nextTier.name} ${Math.max(0, tier.max - p.elo_rating)} ELO` : 'максимальный ранг'}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.rankElo} aria-label={`Рейтинг ELO ${p.elo_rating}`}>
+            {eloAnim}
+          </Text>
+        </View>
+        <View style={{ marginTop: spacing.lg }}>
+          <Bar value={Math.round(tierPct * 100)} max={100} variant="gold" />
+          <View style={styles.rankLabels}>
+            <Text style={styles.rankLabelText}>
+              {tier.name} · {tier.min}
+            </Text>
+            <Text style={styles.rankLabelText}>{nextTier ? `${nextTier.name} · ${tier.max}` : 'MAX'}</Text>
+          </View>
+        </View>
       </Card>
 
       <View style={styles.statsGrid}>
@@ -247,7 +294,7 @@ export default function ProfileScreen() {
 function Stat({ num, cap, accent, bar }: { num: number | string; cap: string; accent?: boolean; bar?: number }) {
   return (
     <Card style={styles.stat}>
-      <Text style={[styles.statNum, accent && { color: colors.accent }]}>{num}</Text>
+      <Text style={[styles.statNum, accent && { color: colors.gold }]}>{num}</Text>
       <Text style={styles.statCap}>{cap}</Text>
       {bar !== undefined ? (
         <View style={{ marginTop: 8 }}>
@@ -271,8 +318,32 @@ const styles = StyleSheet.create({
   pillPrimaryText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
   stat: { flexGrow: 1, flexBasis: 150, alignItems: 'center', padding: spacing.lg },
-  statNum: { color: colors.primary, fontSize: 28, fontWeight: '700' },
+  statNum: { color: colors.accent, fontSize: 28, fontWeight: '700', fontFamily: fontMono },
   statCap: { color: colors.textSub, fontSize: 12, marginTop: 4, textAlign: 'center' },
+  rank: {
+    borderWidth: 1,
+    borderColor: 'rgba(245,165,36,0.32)',
+    backgroundColor: colors.surface,
+    padding: spacing.xl,
+    gap: 0,
+  },
+  rankTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg },
+  rankBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flexShrink: 1 },
+  rankIc: {
+    width: 50,
+    height: 50,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(245,165,36,0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,165,36,0.40)',
+  },
+  rankName: { color: colors.textMain, fontSize: 19, fontWeight: '700' },
+  rankSub: { color: colors.meta, fontSize: 11.5, fontFamily: fontMono, marginTop: 2 },
+  rankElo: { color: colors.gold, fontSize: 32, fontWeight: '800', fontFamily: fontMono },
+  rankLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  rankLabelText: { color: colors.textSub, fontSize: 11, fontFamily: fontMono },
   photoDrop: {
     borderWidth: 2,
     borderStyle: 'dashed',

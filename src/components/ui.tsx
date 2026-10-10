@@ -22,8 +22,9 @@ import {
   SKILL_LEVELS,
   type GameList,
 } from '../types';
-import { avatarHue, colors, LEVEL_COLORS, radius, spacing } from '../theme';
-import { useAuth, useToast } from '../store';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { avatarHue, colors, fontMono, LEVEL_COLORS, radius, spacing } from '../theme';
+import { useAuth } from '../store';
 
 /* ---------------- Форматирование (копия веб-хелперов) ---------------- */
 
@@ -41,6 +42,22 @@ export function formatDate(iso: string): string {
 export function formatMoney(p?: number | null): string {
   if (p === null || p === undefined) return 'Бесплатно';
   return `${p.toLocaleString('ru-RU')} ₽`;
+}
+
+/* ---------------- Иконки (монолиния) ---------------- */
+
+export type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+
+export function Icon({
+  name,
+  size = 18,
+  color = colors.muted,
+}: {
+  name: IconName;
+  size?: number;
+  color?: string;
+}) {
+  return <MaterialCommunityIcons name={name} size={size} color={color} />;
 }
 
 /* ---------------- Базовые контейнеры ---------------- */
@@ -65,11 +82,11 @@ export function Divider() {
 /* ---------------- Кнопка ---------------- */
 
 const BTN: Record<string, { bg: string; border: string; fg: string }> = {
-  primary: { bg: colors.accent, border: 'transparent', fg: '#ffffff' },
-  secondary: { bg: colors.surface, border: colors.border, fg: colors.textMain },
+  primary: { bg: colors.accent, border: 'transparent', fg: colors.accentInk },
+  secondary: { bg: colors.surface2, border: colors.border, fg: colors.textMain },
   ghost: { bg: 'transparent', border: 'transparent', fg: colors.textSub },
-  danger: { bg: colors.dangerBg, border: 'rgba(239,68,68,0.35)', fg: colors.danger },
-  success: { bg: colors.successBg, border: 'rgba(34,197,94,0.35)', fg: colors.success },
+  danger: { bg: colors.dangerBg, border: 'rgba(244,63,94,0.38)', fg: colors.danger },
+  success: { bg: colors.successBg, border: 'rgba(34,197,94,0.38)', fg: colors.success },
 };
 
 export function Btn({
@@ -140,7 +157,7 @@ export function Badge({
   };
   const c = map[variant];
   return (
-    <View style={[styles.badge, { backgroundColor: c.bg }]}>
+    <View style={[styles.badge, { backgroundColor: c.bg, borderColor: c.fg + '55' }]}>
       <Text style={[styles.badgeText, { color: c.fg }]}>{children}</Text>
     </View>
   );
@@ -148,11 +165,16 @@ export function Badge({
 
 export function LevelBadge({ level }: { level: number }) {
   const c = LEVEL_COLORS[level] ?? LEVEL_COLORS[4];
-  const dots = '●'.repeat(Math.min(3, Math.max(1, Math.ceil(level / 3))));
+  const dots = Math.min(3, Math.max(1, Math.ceil(level / 3)));
   return (
     <View style={[styles.badge, styles.levelBadge, { borderColor: c.fg + '55', backgroundColor: c.bg }]}>
+      <View style={styles.dots}>
+        {Array.from({ length: dots }).map((_, i) => (
+          <View key={i} style={[styles.dot, { backgroundColor: c.fg }]} />
+        ))}
+      </View>
       <Text style={[styles.badgeText, { color: c.fg }]}>
-        {dots} {SKILL_LEVELS[level as keyof typeof SKILL_LEVELS] ?? `Уровень ${level}`}
+        {SKILL_LEVELS[level as keyof typeof SKILL_LEVELS] ?? `Уровень ${level}`}
       </Text>
     </View>
   );
@@ -211,31 +233,35 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: `hsl(${hue}, 70%, 50%)`,
+        backgroundColor: `hsl(${hue}, 66%, 52%)`,
         alignItems: 'center',
         justifyContent: 'center',
       }}
     >
-      <Text style={{ color: '#fff', fontWeight: '700', fontSize: size * 0.38 }}>{initials || '?'}</Text>
+      <Text style={{ color: colors.accentInk, fontWeight: '700', fontSize: size * 0.38 }}>
+        {initials || '?'}
+      </Text>
     </View>
   );
 }
 
-/* ---------------- Прогресс-бар ---------------- */
+/* ---------------- Прогресс-бар / вместимость ---------------- */
 
 export function Bar({
   value,
   max = 100,
-  variant = 'accent',
+  variant = 'sky',
 }: {
   value: number;
   max?: number;
-  variant?: 'accent' | 'info' | 'success' | 'danger';
+  variant?: 'sky' | 'accent' | 'info' | 'gold' | 'success' | 'danger';
 }) {
   const pct = Math.min(100, Math.round((value / Math.max(1, max)) * 100));
   const fill: Record<string, string> = {
+    sky: colors.accent,
     accent: colors.accent,
-    info: colors.primary,
+    info: colors.accent,
+    gold: colors.gold,
     success: colors.success,
     danger: colors.danger,
   };
@@ -268,8 +294,8 @@ export function Skeleton({ height, style }: { height: number; style?: StyleProp<
 export function EmptyState({ text, action }: { text: string; action?: React.ReactNode }) {
   return (
     <View style={styles.empty}>
-      <Text style={styles.emptyIcon}>🏐</Text>
-      <Text style={styles.emptyText}>{text}</Text>
+      <Icon name="volleyball" size={56} color={colors.meta} />
+      {text ? <Text style={styles.emptyText}>{text}</Text> : null}
       {action}
     </View>
   );
@@ -365,21 +391,22 @@ export function Tabs<T extends string | number>({
 
 export function AppHeader() {
   const nav = useNavigation<any>();
-  const { isAuth, role, name, logout, setRole } = useAuth();
-  const toast = useToast();
+  const { isAuth, role, name, logout } = useAuth();
   const [open, setOpen] = React.useState(false);
 
   return (
     <View style={styles.header}>
       <View style={styles.headerInner}>
         <Pressable onPress={() => nav.navigate('Tabs')} style={styles.logo}>
-          <Text style={styles.logoBall}>🏐</Text>
-          <Text style={styles.logoText}>VolleyApp</Text>
+          <Icon name="volleyball" size={24} color={colors.accent} />
+          <Text style={styles.logoText}>
+            Volley<Text style={styles.logoAccent}>Hub</Text>
+          </Text>
         </Pressable>
         <View style={{ flex: 1 }} />
         {isAuth ? (
           <Pressable onPress={() => setOpen(true)} style={styles.headerAvatar} accessibilityLabel="Меню профиля">
-            <Text style={styles.headerAvatarText}>{name[0]?.toUpperCase() ?? '?'}</Text>
+            <Text style={styles.headerAvatarText}>{name ? name[0].toUpperCase() : '?'}</Text>
           </Pressable>
         ) : (
           <Btn kind="secondary" small onPress={() => nav.navigate('Login')}>
@@ -391,27 +418,53 @@ export function AppHeader() {
       <RNModal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.menuOverlay} onPress={() => setOpen(false)}>
           <View style={styles.menu}>
-            <MenuItem icon="👤" label="Профиль и ELO" onPress={() => { setOpen(false); nav.navigate('Tabs', { screen: 'Profile' }); }} />
-            <MenuItem icon="📅" label="Мои игры" onPress={() => { setOpen(false); nav.navigate('Tabs', { screen: 'MyGames' }); }} />
-            {role === 'organizer' && (
-              <>
-                <MenuItem icon="📋" label="Кабинет организатора" onPress={() => { setOpen(false); nav.navigate('Organizer'); }} />
-                <MenuItem icon="➕" label="Создать игру" onPress={() => { setOpen(false); nav.navigate('CreateGame'); }} />
-              </>
-            )}
             <MenuItem
-              icon={role === 'organizer' ? '🏐' : '📋'}
-              label={role === 'organizer' ? 'Демо: стать игроком' : 'Демо: стать организатором'}
+              icon="account-outline"
+              label="Профиль и ELO"
               onPress={() => {
                 setOpen(false);
-                const next = role === 'organizer' ? 'player' : 'organizer';
-                setRole(next);
-                toast.push(next === 'organizer' ? 'Демо: вы теперь организатор 📋' : 'Демо: вы снова игрок 🏐', 'info');
-                if (next === 'organizer') nav.navigate('Organizer');
+                nav.navigate('Tabs', { screen: 'Profile' });
               }}
             />
+            <MenuItem
+              icon="calendar-blank-outline"
+              label="Мои игры"
+              onPress={() => {
+                setOpen(false);
+                nav.navigate('Tabs', { screen: 'MyGames' });
+              }}
+            />
+            {role === 'organizer' && (
+              <>
+                <MenuItem
+                  icon="view-grid-outline"
+                  label="Кабинет организатора"
+                  onPress={() => {
+                    setOpen(false);
+                    nav.navigate('Organizer');
+                  }}
+                />
+                <MenuItem
+                  icon="plus"
+                  label="Создать игру"
+                  onPress={() => {
+                    setOpen(false);
+                    nav.navigate('CreateGame');
+                  }}
+                />
+              </>
+            )}
             <Divider />
-            <MenuItem icon="🚪" label="Выйти" danger onPress={() => { setOpen(false); logout(); nav.navigate('Tabs', { screen: 'Games' }); }} />
+            <MenuItem
+              icon="logout"
+              label="Выйти"
+              danger
+              onPress={() => {
+                setOpen(false);
+                logout();
+                nav.navigate('Tabs', { screen: 'Games' });
+              }}
+            />
           </View>
         </Pressable>
       </RNModal>
@@ -425,14 +478,14 @@ function MenuItem({
   onPress,
   danger,
 }: {
-  icon: string;
+  icon: IconName;
   label: string;
   onPress: () => void;
   danger?: boolean;
 }) {
   return (
     <Pressable style={styles.menuItem} onPress={onPress}>
-      <Text style={styles.menuIcon}>{icon}</Text>
+      <Icon name={icon} size={18} color={danger ? colors.danger : colors.muted} />
       <Text style={[styles.menuLabel, danger && { color: colors.danger }]}>{label}</Text>
     </Pressable>
   );
@@ -442,20 +495,65 @@ function MenuItem({
 
 export function GameCard({ game, onPress }: { game: GameList; onPress: () => void }) {
   const free = Math.max(0, game.capacity - game.booked_count);
+  const full = free === 0;
+  const few = free > 0 && free <= 2;
+  const capTxt = full
+    ? 'Мест нет'
+    : few
+      ? `Мало мест · ${free} из ${game.capacity}`
+      : `Свободно ${free} из ${game.capacity}`;
+
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, styles.gameCard, pressed && { borderColor: colors.borderHover }]}>
+    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, styles.gameCard, pressed && styles.gameCardPressed]}>
       <View style={styles.gameTop}>
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.gameTitle} numberOfLines={2}>{game.title}</Text>
-          <Text style={styles.gameDate}>{formatDate(game.date_time)}</Text>
+          <View style={styles.gameWhen}>
+            <Icon name="clock-outline" size={13} color={colors.meta} />
+            <Text style={styles.gameWhenText}>
+              {formatDate(game.date_time)} · {game.duration_minutes} мин
+            </Text>
+          </View>
         </View>
         <LevelBadge level={game.skill_level} />
       </View>
-      <Text style={styles.gameMeta} numberOfLines={1}>📍 {game.location.name}</Text>
-      <Bar value={game.booked_count} max={game.capacity} variant={free === 0 ? 'danger' : 'info'} />
-      <View style={styles.gameBottom}>
-        <Text style={styles.slots}>{free === 0 ? 'Мест нет' : `Свободно ${free} из ${game.capacity}`}</Text>
-        <Text style={styles.price}>{formatMoney(game.price)}</Text>
+
+      <View style={styles.gameMeta}>
+        <View style={styles.gameMetaRow}>
+          <Icon name="map-marker-outline" size={15} color={colors.meta} />
+          <Text style={styles.gameMetaText} numberOfLines={1}>
+            {game.location.name}{game.location.address ? ` · ${game.location.address}` : ''}
+          </Text>
+        </View>
+        <View style={styles.gameMetaRow}>
+          <Icon name="account-group-outline" size={15} color={colors.meta} />
+          <Text style={styles.gameMetaText} numberOfLines={1}>
+            <GenderText gender={game.gender} />
+          </Text>
+        </View>
+      </View>
+
+      <View>
+        <Bar value={game.booked_count} max={game.capacity} variant={full ? 'danger' : few ? 'gold' : 'sky'} />
+        <View style={styles.capRow}>
+          <Text
+            style={[styles.capTxt, few && { color: colors.warning, fontWeight: '600' }, full && { color: colors.danger, fontWeight: '600' }]}
+          >
+            {capTxt}
+          </Text>
+          <Text style={styles.price}>{formatMoney(game.price)}</Text>
+        </View>
+      </View>
+
+      <View style={styles.gameFoot}>
+        <Text style={styles.gameId}>#{game.id}</Text>
+        <View style={[styles.miniBtn, full ? styles.miniBtnGhost : styles.miniBtnPrimary]}>
+          {full ? <Icon name="clock-outline" size={15} color={colors.textMain} /> : null}
+          <Text style={[styles.miniBtnText, { color: full ? colors.textMain : colors.accentInk }]}>
+            {full ? 'Лист ожидания' : 'Подробнее'}
+          </Text>
+          {full ? null : <Icon name="arrow-right" size={15} color={colors.accentInk} />}
+        </View>
       </View>
     </Pressable>
   );
@@ -463,7 +561,7 @@ export function GameCard({ game, onPress }: { game: GameList; onPress: () => voi
 
 /* ---------------- Стили ---------------- */
 
-export const contentStyle: StyleProp<ViewStyle> = { padding: spacing.lg, paddingBottom: 48, gap: spacing.lg };
+export const contentStyle: StyleProp<ViewStyle> = { padding: spacing.lg, paddingBottom: 112, gap: spacing.lg };
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bgDeep },
@@ -492,21 +590,27 @@ const styles = StyleSheet.create({
   btnText: { fontSize: 16, fontWeight: '600' },
 
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingVertical: 3,
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: 'transparent',
     alignSelf: 'flex-start',
   },
   levelBadge: { borderWidth: 1 },
   badgeText: { fontSize: 12, fontWeight: '600' },
+  dots: { flexDirection: 'row', gap: 2 },
+  dot: { width: 4, height: 4, borderRadius: 2 },
 
-  progress: { height: 8, borderRadius: radius.full, backgroundColor: 'rgba(148,163,184,0.15)', overflow: 'hidden' },
+  progress: { height: 7, borderRadius: radius.full, backgroundColor: 'rgba(100,116,139,0.22)', overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: radius.full },
 
-  skeleton: { backgroundColor: colors.surfaceHover, borderRadius: radius.md },
+  skeleton: { backgroundColor: colors.surface3, borderRadius: radius.md },
 
   empty: { alignItems: 'center', paddingVertical: 56, gap: spacing.lg },
-  emptyIcon: { fontSize: 52 },
   emptyText: { color: colors.textSub, fontSize: 15, textAlign: 'center' },
 
   modalOverlay: {
@@ -563,9 +667,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     height: 60,
   },
-  logo: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  logoBall: { fontSize: 20 },
-  logoText: { color: colors.primary, fontSize: 20, fontWeight: '700' },
+  logo: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  logoText: { color: colors.textMain, fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
+  logoAccent: { color: colors.accent },
   headerAvatar: {
     width: 40,
     height: 40,
@@ -574,7 +678,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerAvatarText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  headerAvatarText: { color: colors.accentInk, fontWeight: '700', fontSize: 15 },
   menuOverlay: { flex: 1, backgroundColor: 'rgba(11,17,32,0.4)' },
   menu: {
     position: 'absolute',
@@ -591,14 +695,31 @@ const styles = StyleSheet.create({
   menuIcon: { fontSize: 16 },
   menuLabel: { color: colors.textMain, fontSize: 15 },
 
-  gameCard: { gap: spacing.md },
+  gameCard: { gap: spacing.md, padding: spacing.lg },
+  gameCardPressed: { borderColor: colors.accent, backgroundColor: colors.surface2 },
   gameTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
-  gameTitle: { color: colors.textMain, fontSize: 18, fontWeight: '600' },
-  gameDate: { color: colors.textMuted, fontSize: 13, marginTop: 2 },
-  gameMeta: { color: colors.textSub, fontSize: 14 },
-  gameBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  slots: { color: colors.textSub, fontSize: 13 },
-  price: { color: colors.accent, fontSize: 18, fontWeight: '700' },
+  gameTitle: { color: colors.textMain, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
+  gameWhen: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
+  gameWhenText: { color: colors.meta, fontSize: 12, fontFamily: fontMono },
+  gameMeta: { gap: 7 },
+  gameMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  gameMetaText: { color: colors.muted, fontSize: 13, flexShrink: 1 },
+  capRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 7 },
+  capTxt: { color: colors.muted, fontSize: 12, fontFamily: fontMono },
+  price: { color: colors.gold, fontSize: 16, fontWeight: '700', fontFamily: fontMono },
+  gameFoot: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
+  gameId: { color: colors.meta, fontSize: 12, fontFamily: fontMono },
+  miniBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 36,
+    paddingHorizontal: 13,
+    borderRadius: radius.sm,
+  },
+  miniBtnPrimary: { backgroundColor: colors.accent },
+  miniBtnGhost: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border },
+  miniBtnText: { fontSize: 13, fontWeight: '600' },
 });
 
 /** Хелпер для остановки всплытия нажатия (аналог e.stopPropagation()). */

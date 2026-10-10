@@ -1,49 +1,70 @@
 /* ============================================================
-   Дизайн-токены VolleyApp (перенос из volley-hub-frontend/src/index.css)
+   Дизайн-токены VolleyHub (brand-spec.md + прототип volley-hub-app.html)
+   Правила: небо (accent) = ТОЛЬКО действия, янтарь (gold) = ТОЛЬКО данные,
+   все цифры — моноширинный шрифт.
    ============================================================ */
+import { Platform } from 'react-native';
 
 export const colors = {
-  /* Базовые */
-  bgDeep: '#0b1120',
-  bgScreen: '#0f172a',
-  surface: '#1e293b',
-  surfaceHover: '#334155',
-  border: '#334155',
-  borderHover: '#475569',
+  /* ===== Поверхности (слоёные) ===== */
+  bg: '#0b1120',
+  bg2: '#0d1424',
+  surface: '#141c2e',
+  surface2: '#1a2438',
+  surface3: '#212d45',
+  border: '#26344c',
+  border2: '#334155',
 
-  /* Акценты */
-  primary: '#38bdf8',
-  primaryGlow: 'rgba(56, 189, 248, 0.2)',
-  accent: '#f59e0b',
+  /* ===== Текст ===== */
+  fg: '#f8fafc',
+  fg2: '#cbd5e1',
+  muted: '#94a3b8',
+  meta: '#64748b',
+
+  /* ===== Акценты: НЕБО = действие, ЯНТАРЬ = данные ===== */
+  accent: '#38bdf8' /* ACTION: CTA, ссылки, фокус */,
+  accentInk: '#04121e',
+  gold: '#f5a524' /* DATA: ELO, цена, места, ранг */,
   accentHover: '#fbbf24',
 
-  /* Семантика */
+  /* ===== Семантика ===== */
   success: '#22c55e',
   successBg: 'rgba(34, 197, 94, 0.15)',
-  warning: '#f59e0b',
-  warningBg: 'rgba(245, 158, 11, 0.15)',
-  danger: '#ef4444',
-  dangerBg: 'rgba(239, 68, 68, 0.15)',
+  warning: '#f5a524',
+  warningBg: 'rgba(245, 165, 36, 0.14)',
+  danger: '#f43f5e',
+  dangerBg: 'rgba(244, 63, 94, 0.15)',
   info: '#38bdf8',
-  infoBg: 'rgba(56, 189, 248, 0.15)',
-  muted: '#64748b',
+  infoBg: 'rgba(56, 189, 248, 0.14)',
 
-  /* Текст */
+  /* ===== Обратная совместимость со старыми именами ===== */
+  bgDeep: '#0b1120',
+  bgScreen: '#0d1424',
+  surfaceHover: '#212d45',
+  borderHover: '#334155',
+  primary: '#38bdf8',
+  primaryGlow: 'rgba(56, 189, 248, 0.20)',
   textMain: '#f8fafc',
   textSub: '#94a3b8',
   textMuted: '#64748b',
-  textInverse: '#0f172a',
+  textInverse: '#04121e',
 
   /* Оверлеи */
-  overlay: 'rgba(11, 17, 32, 0.7)',
+  overlay: 'rgba(11, 17, 32, 0.72)',
   surfaceSoft: 'rgba(148, 163, 184, 0.05)',
 } as const;
 
+/** Моноширинный шрифт для всех числовых значений (без внешних зависимостей). */
+export const fontMono = (Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }) ??
+  'monospace') as string;
+
 export const radius = {
-  sm: 6,
-  md: 8,
-  lg: 12,
-  full: 9999,
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  pill: 999,
+  full: 999,
 } as const;
 
 export const spacing = {
@@ -64,17 +85,18 @@ export const fontSize = {
   small: 13,
 } as const;
 
-/** Уровни игры: цвет бейджа по SkillLevel (1..9). Копия LEVEL_COLORS из ui.tsx. */
+/** Уровни игры: цвет бейджа по SkillLevel (1..9). Небо = средний,
+ *  зелёный = выше среднего, янтарь = высокий, красный = профи. */
 export const LEVEL_COLORS: Record<number, { fg: string; bg: string }> = {
-  1: { fg: '#64748b', bg: 'rgba(100,116,139,0.15)' },
-  2: { fg: '#64748b', bg: 'rgba(100,116,139,0.15)' },
-  3: { fg: '#38bdf8', bg: 'rgba(56,189,248,0.12)' },
-  4: { fg: '#38bdf8', bg: 'rgba(56,189,248,0.12)' },
-  5: { fg: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
-  6: { fg: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
-  7: { fg: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  8: { fg: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
-  9: { fg: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+  1: { fg: '#64748b', bg: 'rgba(100,116,139,0.16)' },
+  2: { fg: '#64748b', bg: 'rgba(100,116,139,0.16)' },
+  3: { fg: '#38bdf8', bg: 'rgba(56,189,248,0.13)' },
+  4: { fg: '#38bdf8', bg: 'rgba(56,189,248,0.13)' },
+  5: { fg: '#22c55e', bg: 'rgba(34,197,94,0.13)' },
+  6: { fg: '#22c55e', bg: 'rgba(34,197,94,0.13)' },
+  7: { fg: '#f5a524', bg: 'rgba(245,165,36,0.13)' },
+  8: { fg: '#f5a524', bg: 'rgba(245,165,36,0.13)' },
+  9: { fg: '#f43f5e', bg: 'rgba(244,63,94,0.13)' },
 };
 
 /** Детерминированный цвет аватара по имени (как Avatar в веб-приложении). */
