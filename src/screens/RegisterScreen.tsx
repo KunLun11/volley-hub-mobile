@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
 import { AuthLayout } from '../components/AuthLayout';
-import { Banner, Btn } from '../components/ui';
+import { Banner, Btn, Icon, type IconName } from '../components/ui';
 import { Field, Input } from '../components/form';
 import { colors, radius, spacing } from '../theme';
 
@@ -75,14 +75,14 @@ export default function RegisterScreen() {
         <Field label="Кто вы?">
           <View style={styles.roleRow}>
             <RoleCard
-              icon="🏐"
+              icon="volleyball"
               title="Игрок"
               caption="Хочу играть по уровню"
               selected={role === 'player'}
               onPress={() => setRole('player')}
             />
             <RoleCard
-              icon="📋"
+              icon="calendar-check-outline"
               title="Организатор"
               caption="Создаю игры, собираю деньги"
               selected={role === 'organizer'}
@@ -159,7 +159,7 @@ function RoleCard({
   selected,
   onPress,
 }: {
-  icon: string;
+  icon: IconName;
   title: string;
   caption: string;
   selected: boolean;
@@ -167,7 +167,9 @@ function RoleCard({
 }) {
   return (
     <Pressable style={[styles.roleCard, selected && styles.roleCardOn]} onPress={onPress}>
-      <Text style={styles.roleIcon}>{icon}</Text>
+      <View style={styles.roleIcon}>
+        <Icon name={icon} size={26} color={selected ? colors.primary : colors.muted} />
+      </View>
       <Text style={styles.roleTitle}>{title}</Text>
       <Text style={styles.roleCaption}>{caption}</Text>
     </Pressable>
@@ -188,7 +190,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   roleCardOn: { borderColor: colors.primary, backgroundColor: colors.infoBg },
-  roleIcon: { fontSize: 26, marginBottom: 4 },
+  roleIcon: { marginBottom: 4 },
   roleTitle: { color: colors.textMain, fontWeight: '700' },
   roleCaption: { color: colors.textSub, fontSize: 12, textAlign: 'center' },
   eye: { position: 'absolute', right: 6, top: 4, padding: 10 },
