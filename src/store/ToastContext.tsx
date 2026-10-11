@@ -32,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
-      <View style={[styles.stack, { bottom: insets.bottom + 92 }]} pointerEvents="box-none">
+      <View style={[styles.stack, { bottom: insets.bottom + 72 }]} pointerEvents="box-none">
         {toasts.map((t) => (
           <ToastView key={t.id} toast={t} />
         ))}

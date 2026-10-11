@@ -1,12 +1,11 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { createBottomTabNavigator, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from '../theme';
-import { AppHeader, Screen, type IconName } from '../components/ui';
+import { AppHeader, Icon, Screen, type IconName } from '../components/ui';
 import { useAuth } from '../store';
 import GamesListScreen from '../screens/GamesListScreen';
 import MyGamesScreen from '../screens/MyGamesScreen';
@@ -51,19 +50,24 @@ const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 /* ============================================================
-   Плавающий док — signature-элемент мобильного прототипа.
-   Пункт «Создать» показывается ТОЛЬКО организатору; игрок видит
-   Игры · Мои игры · Профиль, организатор — Игры · Кабинет · Профиль + Создать.
+   Нижнее меню — как в референсе (Telegram): плоская полоса во всю
+   ширину, пункт = иконка + подпись, активный пункт подсвечен небом.
+   Игрок видит Игры · Мои игры · Профиль, организатор —
+   Игры · Кабинет · Профиль, а «Создать игру» — плавающая кнопка (FAB).
    ============================================================ */
-type DockItem = { key: string; label: string; icon: IconName; active: boolean; onPress: () => void };
+const BAR_HEIGHT = 56;
+const FAB_SIZE = 56;
+
+type BarItem = { key: string; label: string; icon: IconName; active: boolean; onPress: () => void };
 
 function Dock({ state, navigation }: { state: BottomTabBarProps['state']; navigation: any }) {
   const { isAuth, role } = useAuth();
   const insets = useSafeAreaInsets();
   const parent = navigation.getParent();
   const focused = state.routes[state.index]?.name;
+  const isOrganizer = isAuth && role === 'organizer';
 
-  const items: DockItem[] = [
+  const items: BarItem[] = [
     {
       key: 'Games',
       label: 'Игры',
@@ -73,7 +77,7 @@ function Dock({ state, navigation }: { state: BottomTabBarProps['state']; naviga
     },
   ];
 
-  if (isAuth && role === 'organizer') {
+  if (isOrganizer) {
     items.push({
       key: 'Organizer',
       label: 'Кабинет',
@@ -99,40 +103,41 @@ function Dock({ state, navigation }: { state: BottomTabBarProps['state']; naviga
     onPress: () => navigation.navigate('Profile'),
   });
 
+  const barHeight = BAR_HEIGHT + insets.bottom;
+
   return (
-    <View pointerEvents="box-none" style={[styles.dockWrap, { paddingBottom: Math.max(insets.bottom, 15) }]}>
-      <View style={styles.dock}>
+    <>
+      <View style={[styles.bar, { height: barHeight, paddingBottom: insets.bottom }]}>
         {items.map((it) => (
           <Pressable
             key={it.key}
             onPress={it.onPress}
-            style={styles.dockItem}
+            style={styles.barItem}
             accessibilityRole="button"
+            accessibilityState={{ selected: it.active }}
             accessibilityLabel={it.label}
           >
-            <MaterialCommunityIcons
-              name={it.icon}
-              size={21}
-              color={it.active ? colors.accent : colors.muted}
-            />
-            <Text style={[styles.dockLabel, it.active && styles.dockLabelActive]}>{it.label}</Text>
-            {it.active ? <View style={styles.dockDot} /> : null}
+            <Icon name={it.icon} size={24} color={it.active ? colors.accent : colors.muted} />
+            <Text style={[styles.barLabel, it.active && styles.barLabelActive]}>{it.label}</Text>
           </Pressable>
         ))}
-
-        {isAuth && role === 'organizer' ? (
-          <Pressable
-            onPress={() => parent?.navigate('CreateGame')}
-            style={({ pressed }) => [styles.dockCreate, pressed && { transform: [{ translateY: 1 }] }]}
-            accessibilityRole="button"
-            accessibilityLabel="Создать игру"
-          >
-            <MaterialCommunityIcons name="plus" size={18} color={colors.accentInk} />
-            <Text style={styles.dockCreateText}>Создать</Text>
-          </Pressable>
-        ) : null}
       </View>
-    </View>
+
+      {isOrganizer ? (
+        <Pressable
+          onPress={() => parent?.navigate('CreateGame')}
+          style={({ pressed }) => [
+            styles.fab,
+            { bottom: barHeight + 16 },
+            pressed && { transform: [{ scale: 0.94 }] },
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel="Создать игру"
+        >
+          <Icon name="plus" size={26} color={colors.accentInk} />
+        </Pressable>
+      ) : null}
+    </>
   );
 }
 
@@ -169,50 +174,46 @@ export default function RootNavigator() {
 }
 
 const styles = StyleSheet.create({
-  dockWrap: {
+  bar: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
-    paddingHorizontal: 15,
-    zIndex: 90,
-  },
-  dock: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    padding: 7,
-    borderRadius: 26,
-    backgroundColor: 'rgba(20, 28, 46, 0.94)',
-    borderWidth: 1,
-    borderColor: 'rgba(248, 250, 252, 0.10)',
+    backgroundColor: colors.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
     shadowColor: '#000',
     shadowOpacity: 0.45,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 14 },
-    elevation: 14,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: -6 },
+    elevation: 16,
+    zIndex: 90,
   },
-  dockItem: {
+  barItem: {
     flex: 1,
+    height: BAR_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 3,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    borderRadius: 19,
   },
-  dockLabel: { color: colors.muted, fontSize: 10.5, fontWeight: '600' },
-  dockLabelActive: { color: colors.accent },
-  dockDot: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: colors.accent, marginTop: 1 },
-  dockCreate: {
-    flex: 1.65,
-    flexDirection: 'row',
+  barLabel: { color: colors.muted, fontSize: 10.5, fontWeight: '600' },
+  barLabelActive: { color: colors.accent },
+  fab: {
+    position: 'absolute',
+    right: 18,
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: FAB_SIZE / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    height: 48,
-    borderRadius: 19,
     backgroundColor: colors.accent,
+    shadowColor: colors.accent,
+    shadowOpacity: 0.45,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 12,
+    zIndex: 91,
   },
-  dockCreateText: { color: colors.accentInk, fontSize: 13.5, fontWeight: '700' },
 });

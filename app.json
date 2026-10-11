@@ -39,7 +39,16 @@
         }
       ],
       "expo-asset",
-      "expo-font"
+      [
+        "expo-font",
+        {
+          "android": {
+            "fonts": [
+              "./assets/fonts/material-community.ttf"
+            ]
+          }
+        }
+      ]
     ],
     "extra": {}
   }
