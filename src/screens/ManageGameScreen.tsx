@@ -121,7 +121,7 @@ export default function ManageGameScreen() {
                       kind="success"
                       small
                       loading={busyId === p.id}
-                      onPress={() => act(p.id, (g) => api.markPaid(g), `${p.player_name}: оплачено ✅`)}
+                      onPress={() => act(p.id, (g, pid) => api.markPaid(g, pid), `${p.player_name}: оплачено ✅`)}
                     >
                       Оплатил
                     </Btn>

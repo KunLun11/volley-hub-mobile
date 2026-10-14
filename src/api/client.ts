@@ -366,7 +366,8 @@ export const api = {
 
   completeGame: (id: number): Promise<unknown> => request(`/games/${id}/complete/`, { method: 'POST' }),
 
-  markPaid: (gameId: number): Promise<unknown> => request(`/games/${gameId}/confirm/`, { method: 'POST' }),
+  markPaid: (gameId: number, participantId: number): Promise<unknown> =>
+    request(`/games/${gameId}/confirm-participant/${participantId}/`, { method: 'POST' }),
 
   markNoShow: (gameId: number, participantId: number): Promise<unknown> =>
     request(`/games/${gameId}/no-show/${participantId}/`, { method: 'POST' }),
