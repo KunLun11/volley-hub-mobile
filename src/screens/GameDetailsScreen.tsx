@@ -14,6 +14,7 @@ import {
   Card,
   GameStatusBadge,
   GenderText,
+  Icon,
   KV,
   LevelBadge,
   Modal,
@@ -31,6 +32,7 @@ interface ParticipantLite {
   player_name: string;
   player_elo: number;
   status: number;
+  player_user_id?: string | null;
 }
 
 /** Б2. Карточка игры + Б3. Оплата (MVP: перевод по номеру). */
@@ -276,20 +278,43 @@ export default function GameDetailsScreen() {
                 variant={full ? 'danger' : 'info'}
               />
               <View style={{ gap: spacing.sm }}>
-                {participants.map((p) => (
-                  <View key={p.id} style={styles.participant}>
-                    <Avatar name={p.player_name} size={36} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.pName}>{p.player_name}</Text>
-                      <Text style={styles.pSub}>ELO {p.player_elo}</Text>
+                {participants.map((p) => {
+                  const uid = p.player_user_id;
+                  const row = (
+                    <>
+                      <Avatar name={p.player_name} size={36} />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.pName}>{p.player_name}</Text>
+                        <Text style={styles.pSub}>ELO {p.player_elo}</Text>
+                      </View>
+                      <View
+                        style={[
+                          styles.pBadge,
+                          p.status === 2 ? { backgroundColor: colors.successBg } : { backgroundColor: colors.infoBg },
+                        ]}
+                      >
+                        <Text style={{ color: p.status === 2 ? colors.success : colors.primary, fontSize: 12, fontWeight: '600' }}>
+                          {p.status === 2 ? 'Оплачено' : 'Записан'}
+                        </Text>
+                      </View>
+                    </>
+                  );
+                  return uid ? (
+                    <Pressable
+                      key={p.id}
+                      onPress={() => nav.navigate('UserProfile', { id: uid })}
+                      style={({ pressed }) => [styles.participant, styles.participantLink, pressed && styles.pressed]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Открыть профиль ${p.player_name}`}
+                    >
+                      {row}
+                    </Pressable>
+                  ) : (
+                    <View key={p.id} style={styles.participant}>
+                      {row}
                     </View>
-                    <View style={[styles.pBadge, p.status === 2 ? { backgroundColor: colors.successBg } : { backgroundColor: colors.infoBg }]}>
-                      <Text style={{ color: p.status === 2 ? colors.success : colors.primary, fontSize: 12, fontWeight: '600' }}>
-                        {p.status === 2 ? 'Оплачено' : 'Записан'}
-                      </Text>
-                    </View>
-                  </View>
-                ))}
+                  );
+                })}
                 {participants.length === 0 ? <Text style={styles.muted}>Пока никого. Будьте первым!</Text> : null}
               </View>
             </Card>
@@ -307,15 +332,33 @@ export default function GameDetailsScreen() {
             {/* Организатор */}
             <Card style={{ gap: spacing.md }}>
               <Text style={styles.h3}>Организатор</Text>
-              <View style={styles.row}>
-                <Avatar name={organizerName} size={52} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.pName}>{organizerName}</Text>
-                  <Text style={styles.pSub}>
-                    {detail.organizer.total_games} игр проведено · ELO {detail.organizer.elo_rating}
-                  </Text>
-                </View>
-              </View>
+              {(() => {
+                const orgUserId = detail.organizer.user_id;
+                const inner = (
+                  <>
+                    <Avatar name={organizerName} size={52} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.pName}>{organizerName}</Text>
+                      <Text style={styles.pSub}>
+                        {detail.organizer.total_games} игр проведено · ELO {detail.organizer.elo_rating}
+                      </Text>
+                    </View>
+                    {orgUserId ? <Icon name="chevron-right" size={22} color={colors.muted} /> : null}
+                  </>
+                );
+                return orgUserId ? (
+                  <Pressable
+                    onPress={() => nav.navigate('UserProfile', { id: orgUserId })}
+                    style={({ pressed }) => [styles.row, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Открыть профиль ${organizerName}`}
+                  >
+                    {inner}
+                  </Pressable>
+                ) : (
+                  <View style={styles.row}>{inner}</View>
+                );
+              })()}
               {detail.organizer.description ? <Text style={styles.body}>{detail.organizer.description}</Text> : null}
             </Card>
           </>
@@ -392,6 +435,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: colors.surfaceSoft,
   },
+  participantLink: { borderWidth: 1, borderColor: colors.border },
+  pressed: { opacity: 0.85 },
   pName: { color: colors.textMain, fontSize: 14, fontWeight: '600' },
   pSub: { color: colors.textSub, fontSize: 12 },
   pBadge: { borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 },

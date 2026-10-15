@@ -26,6 +26,7 @@ interface ParticipantLite {
   player_name: string;
   player_elo: number;
   status: number; // 1 registered, 2 confirmed, 3 attended, 4 no_show
+  player_user_id?: string | null;
 }
 
 /** В3. Управление записавшимися + В4. Сводка после игры */
@@ -102,52 +103,71 @@ export default function ManageGameScreen() {
 
         <Card style={{ gap: spacing.md }}>
           <Text style={styles.h3}>Участники</Text>
-          {players.map((p) => (
-            <View key={p.id} style={styles.participant}>
-              <Avatar name={p.player_name} size={36} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.pName}>{p.player_name}</Text>
-                <Text style={styles.pSub}>ELO {p.player_elo}</Text>
-              </View>
-              <View style={styles.row}>
-                <View style={[styles.statusBadge, statusStyle(p.status)]}>
-                  <Text style={[styles.statusText, statusTextStyle(p.status)]}>{statusLabel(p.status)}</Text>
+          {players.map((p) => {
+            const uid = p.player_user_id;
+            const identity = (
+              <>
+                <Avatar name={p.player_name} size={36} />
+                <View>
+                  <Text style={styles.pName}>{p.player_name}</Text>
+                  <Text style={styles.pSub}>ELO {p.player_elo}</Text>
+                </View>
+              </>
+            );
+            return (
+              <View key={p.id} style={styles.participant}>
+                {uid ? (
+                  <Pressable
+                    onPress={() => nav.navigate('UserProfile', { id: uid })}
+                    style={({ pressed }) => [styles.identity, pressed && styles.pressed]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Открыть профиль ${p.player_name}`}
+                  >
+                    {identity}
+                  </Pressable>
+                ) : (
+                  <View style={styles.identity}>{identity}</View>
+                )}
+                <View style={styles.row}>
+                  <View style={[styles.statusBadge, statusStyle(p.status)]}>
+                    <Text style={[styles.statusText, statusTextStyle(p.status)]}>{statusLabel(p.status)}</Text>
+                  </View>
+                </View>
+                <View style={styles.actionsCol}>
+                  {p.status === 1 ? (
+                    <>
+                      <Btn
+                        kind="success"
+                        small
+                        loading={busyId === p.id}
+                        onPress={() => act(p.id, (g, pid) => api.markPaid(g, pid), `${p.player_name}: оплачено ✅`)}
+                      >
+                        Оплатил
+                      </Btn>
+                      <Btn
+                        kind="danger"
+                        small
+                        onPress={() =>
+                          act(p.id, () => api.cancelRegistration(gid).then(() => null), 'Удалён за неоплату')
+                        }
+                      >
+                        Удалить
+                      </Btn>
+                    </>
+                  ) : null}
+                  {(p.status === 1 || p.status === 2) && detail?.status === 4 ? (
+                    <Btn
+                      kind="secondary"
+                      small
+                      onPress={() => act(p.id, api.markNoShow, `${p.player_name}: no-show`)}
+                    >
+                      No-show
+                    </Btn>
+                  ) : null}
                 </View>
               </View>
-              <View style={styles.actionsCol}>
-                {p.status === 1 ? (
-                  <>
-                    <Btn
-                      kind="success"
-                      small
-                      loading={busyId === p.id}
-                      onPress={() => act(p.id, (g, pid) => api.markPaid(g, pid), `${p.player_name}: оплачено ✅`)}
-                    >
-                      Оплатил
-                    </Btn>
-                    <Btn
-                      kind="danger"
-                      small
-                      onPress={() =>
-                        act(p.id, () => api.cancelRegistration(gid).then(() => null), 'Удалён за неоплату')
-                      }
-                    >
-                      Удалить
-                    </Btn>
-                  </>
-                ) : null}
-                {(p.status === 1 || p.status === 2) && detail?.status === 4 ? (
-                  <Btn
-                    kind="secondary"
-                    small
-                    onPress={() => act(p.id, api.markNoShow, `${p.player_name}: no-show`)}
-                  >
-                    No-show
-                  </Btn>
-                ) : null}
-              </View>
-            </View>
-          ))}
+            );
+          })}
           {players.length === 0 ? <Text style={styles.muted}>Записанных пока нет.</Text> : null}
         </Card>
 
@@ -197,6 +217,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceSoft,
     flexWrap: 'wrap',
   },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1, minWidth: 140 },
+  pressed: { opacity: 0.85 },
   pName: { color: colors.textMain, fontSize: 14, fontWeight: '600' },
   pSub: { color: colors.textSub, fontSize: 12 },
   statusBadge: { borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 },

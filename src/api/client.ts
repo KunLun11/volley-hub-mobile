@@ -11,7 +11,8 @@
    Auth        POST /auth/login/ | logout/ | refresh/
    Register    POST /register/user/ | verify-email/ | resend-code/
    Users       GET  /users/me/
-   Profiles    GET  /profiles/users/<uuid>/profile/
+   Profiles    GET  /profiles/users/<uuid>/          (публичный профиль любого пользователя)
+               GET  /profiles/users/<uuid>/profile/
                POST /profiles/profile/ | PATCH users/<uuid>/profile/
    Games       GET  /games/?title&status&skill_level&gender&date_from&date_to&page
                GET  /games/<id>/ | <id>/participants/ | my-games/ | organized/ | locations/
@@ -32,11 +33,13 @@ import type {
   LoginPayload,
   MeSchema,
   MyGame,
+  OrganizerProfile,
   Paginated,
   PlayerProfile,
   PlayerProfileUpdate,
   TokenPair,
   UserCreatePayload,
+  UserProfileResponse,
   VerifyEmailPayload,
   VerifyEmailResult,
 } from '../types';
@@ -203,6 +206,7 @@ function adaptGameDetail(d: Record<string, any>): GameDetail {
     location: adaptLocation(d.location),
     organizer: {
       id: organizer.id ?? 0,
+      user_id: organizer.user ?? '',
       first_name: organizer.first_name ?? '',
       last_name: organizer.last_name ?? '',
       elo_rating: Number(organizer.elo_rating ?? organizer.player?.elo_rating ?? 0),
@@ -219,8 +223,10 @@ function adaptParticipant(p: Record<string, any>): GameParticipant & { player_na
     id: p.id,
     game_id: typeof p.game === 'object' && p.game !== null ? p.game.id : Number(p.game),
     player_id: player.id ?? p.player,
+    player_user_id: player.user ?? null,
     player_name: personName(player),
     player_elo: Number(player.elo_rating ?? 0),
+    player_photo: player.photo ?? null,
     status: Number(p.status ?? 1),
     registered_at: p.registered_at ?? '',
     cancelled_at: p.cancelled_at ?? null,
@@ -260,6 +266,31 @@ function adaptProfile(p: Record<string, any>, me?: MeSchema): PlayerProfile {
     completion_percentage: Number(p.completion_percentage ?? 0),
     total_games: Number(p.total_games ?? 0),
     total_tournament: Number(p.total_tournament ?? 0),
+  };
+}
+
+function adaptOrganizerProfile(p: Record<string, any>, me?: MeSchema): OrganizerProfile {
+  return {
+    id: p.id ?? 0,
+    user: {
+      id: p.user?.id ?? me?.id ?? '',
+      email: p.user?.email ?? me?.email ?? '',
+      role: p.user?.role ?? me?.role ?? 'organizer',
+      created_at: p.created_at ?? '',
+      updated_at: p.updated_at ?? '',
+    },
+    first_name: p.first_name ?? '',
+    last_name: p.last_name ?? '',
+    middle_name: p.middle_name ?? '',
+    birth_date: p.birth_date ?? '',
+    gender: p.gender ?? '',
+    city: p.city ?? '',
+    elo_rating: Number(p.elo_rating ?? 0),
+    photo: p.photo ?? '',
+    description: p.description ?? '',
+    total_games: Number(p.total_games ?? 0),
+    organizer_rating: Number(p.organizer_rating ?? 0),
+    games_cancelled: Number(p.games_cancelled ?? 0),
   };
 }
 
@@ -315,6 +346,16 @@ export const api = {
         body: JSON.stringify(body),
       });
       return adaptProfile(updated, me);
+    }),
+
+  /** Публичный профиль другого пользователя: GET /profiles/users/<uuid>/.
+   *  Бэкенд сам определяет тип профиля (player | organizer) по роли пользователя. */
+  userProfile: (userId: string): Promise<UserProfileResponse> =>
+    request<{ type?: string; profile?: Record<string, any> }>(`/profiles/users/${userId}/`).then((res) => {
+      const type = res.type === 'organizer' ? 'organizer' : 'player';
+      return type === 'organizer'
+        ? { type, profile: adaptOrganizerProfile(res.profile ?? {}) }
+        : { type, profile: adaptProfile(res.profile ?? {}) };
     }),
 
   games: (filters: {

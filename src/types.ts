@@ -125,6 +125,8 @@ export interface OrganizerProfile {
   photo: string;
   description: string;
   total_games: number;
+  organizer_rating: number;
+  games_cancelled: number;
 }
 
 export interface PlayerProfile {
@@ -165,6 +167,8 @@ export interface GameDetail {
   id: number;
   organizer: {
     id: number;
+    /** UUID пользователя-организатора — для перехода на его публичный профиль. */
+    user_id?: string;
     first_name: string;
     last_name: string;
     elo_rating?: number;
@@ -224,12 +228,24 @@ export interface GameParticipant {
   id: number;
   game_id: number;
   player_id: number;
+  /** UUID пользователя-игрока — для перехода на его публичный профиль. */
+  player_user_id?: string | null;
   player_name?: string;
   player_elo?: number;
+  /** URL фото профиля игрока (PlayerShortSerializer.photo) или null. */
+  player_photo?: string | null;
   status: number;
   registered_at: string;
   cancelled_at?: string | null;
   checked_in_at?: string | null;
+}
+
+/** GET /api/v1/profiles/users/<uuid>/ :: UserProfileView
+ *  Публичный профиль любого пользователя для экрана «чужой профиль». */
+export interface UserProfileResponse {
+  type: 'player' | 'organizer';
+  /** Профиль в публичном (read-only) виде: PlayerProfile или OrganizerProfile. */
+  profile: PlayerProfile | OrganizerProfile;
 }
 
 export interface CreateGame {

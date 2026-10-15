@@ -18,6 +18,7 @@ import GameDetailsScreen from '../screens/GameDetailsScreen';
 import CreateGameScreen from '../screens/CreateGameScreen';
 import OrganizerCabinetScreen from '../screens/OrganizerCabinetScreen';
 import ManageGameScreen from '../screens/ManageGameScreen';
+import UserProfileScreen from '../screens/UserProfileScreen';
 
 export type RootStackParamList = {
   Tabs: undefined;
@@ -29,6 +30,8 @@ export type RootStackParamList = {
   CreateGame: undefined;
   Organizer: undefined;
   ManageGame: { id: number };
+  /** Чужой профиль: UUID пользователя (player | organizer). */
+  UserProfile: { id: string };
 };
 
 export type TabParamList = {
@@ -169,6 +172,7 @@ export default function RootNavigator() {
       <Stack.Screen name="CreateGame" component={CreateGameScreen} />
       <Stack.Screen name="Organizer" component={OrganizerCabinetScreen} />
       <Stack.Screen name="ManageGame" component={ManageGameScreen} />
+      <Stack.Screen name="UserProfile" component={UserProfileScreen} />
     </Stack.Navigator>
   );
 }

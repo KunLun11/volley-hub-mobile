@@ -16,18 +16,10 @@ import {
 } from '../components/ui';
 import { Field, Input, RadioPills, Select } from '../components/form';
 import { pickImageDataUri } from '../lib/image';
+import { rankFor } from '../lib/profile';
 import { useAuth, useToast } from '../store';
 import { useNavigation } from '@react-navigation/native';
 import { colors, fontMono, radius, spacing } from '../theme';
-
-/** Ранги по ELO (янтарь = данные, brand-spec.md) */
-const TIERS = [
-  { name: 'Бронза', min: 0, max: 1200 },
-  { name: 'Серебро', min: 1200, max: 1500 },
-  { name: 'Золото', min: 1500, max: 1800 },
-  { name: 'Платина', min: 1800, max: 2100 },
-  { name: 'Алмаз', min: 2100, max: 2600 },
-];
 
 /** Б5. Профиль -> GET /users/me/ + PATCH profiles/... */
 export default function ProfileScreen() {
@@ -145,13 +137,7 @@ export default function ProfileScreen() {
   const name = `${p.first_name} ${p.last_name}`.trim() || 'Игрок';
 
   /* ELO -> тир + подуровень (III/II/I) + прогресс до следующего */
-  const tierIdxRaw = TIERS.findIndex((t) => p.elo_rating < t.max);
-  const tierIdx = tierIdxRaw === -1 ? TIERS.length - 1 : tierIdxRaw;
-  const tier = TIERS[tierIdx];
-  const nextTier = TIERS[tierIdx + 1];
-  const tierPct = Math.min(1, Math.max(0, (p.elo_rating - tier.min) / (tier.max - tier.min)));
-  const roman = tierPct < 0.34 ? 'III' : tierPct < 0.67 ? 'II' : 'I';
-  const rankName = `${tier.name} ${roman}`;
+  const { tier, nextTier, pct: tierPct, name: rankName } = rankFor(p.elo_rating);
 
   return (
     <ScrollView contentContainerStyle={contentStyle} keyboardShouldPersistTaps="handled">
