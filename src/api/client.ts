@@ -19,6 +19,8 @@
                POST /games/ (create)
                POST /games/<id>/register/ | cancel-registration/ | confirm/ | attend/
                          | publish/ | close-registration/ | complete/ | cancel/
+                         | confirm-participant/<participant_id>/
+                         | remove-participant/<participant_id>/
                          | no-show/<participant_id>/
    ============================================================ */
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -409,6 +411,13 @@ export const api = {
 
   markPaid: (gameId: number, participantId: number): Promise<unknown> =>
     request(`/games/${gameId}/confirm-participant/${participantId}/`, { method: 'POST' }),
+
+  /**
+   * Организатор удаляет участника, в том числе уже оплатившего (решение конфликта):
+   * POST /games/<id>/remove-participant/<pid>/
+   */
+  removeParticipant: (gameId: number, participantId: number): Promise<unknown> =>
+    request(`/games/${gameId}/remove-participant/${participantId}/`, { method: 'POST' }),
 
   markNoShow: (gameId: number, participantId: number): Promise<unknown> =>
     request(`/games/${gameId}/no-show/${participantId}/`, { method: 'POST' }),

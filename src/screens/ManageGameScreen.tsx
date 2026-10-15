@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 import { api } from '../api/client';
@@ -65,6 +65,29 @@ export default function ManageGameScreen() {
 
   const paid = players.filter((p) => p.status === 2 || p.status === 3).length;
   const total = players.length;
+
+  /** Удаление участника с подтверждением (включая уже оплатившего — решение конфликта). */
+  function confirmRemove(p: ParticipantLite) {
+    const isPaid = p.status === 2 || p.status === 3;
+    Alert.alert(
+      'Удалить участника?',
+      `${p.player_name} будет исключён из игры, место снова откроется для записи.` +
+        (isPaid ? '\n\nУчастник уже оплатил. Удаление не отменяет платёж — верните деньги вне сервиса.' : ''),
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Удалить',
+          style: 'destructive',
+          onPress: () =>
+            act(
+              p.id,
+              api.removeParticipant,
+              isPaid ? `${p.player_name}: удалён из игры` : `${p.player_name}: удалён за неоплату`,
+            ),
+        },
+      ],
+    );
+  }
 
   return (
     <Screen>
@@ -135,25 +158,19 @@ export default function ManageGameScreen() {
                 </View>
                 <View style={styles.actionsCol}>
                   {p.status === 1 ? (
-                    <>
-                      <Btn
-                        kind="success"
-                        small
-                        loading={busyId === p.id}
-                        onPress={() => act(p.id, (g, pid) => api.markPaid(g, pid), `${p.player_name}: оплачено ✅`)}
-                      >
-                        Оплатил
-                      </Btn>
-                      <Btn
-                        kind="danger"
-                        small
-                        onPress={() =>
-                          act(p.id, () => api.cancelRegistration(gid).then(() => null), 'Удалён за неоплату')
-                        }
-                      >
-                        Удалить
-                      </Btn>
-                    </>
+                    <Btn
+                      kind="success"
+                      small
+                      loading={busyId === p.id}
+                      onPress={() => act(p.id, (g, pid) => api.markPaid(g, pid), `${p.player_name}: оплачено ✅`)}
+                    >
+                      Оплатил
+                    </Btn>
+                  ) : null}
+                  {p.status !== 5 ? (
+                    <Btn kind="danger" small loading={busyId === p.id} onPress={() => confirmRemove(p)}>
+                      Удалить
+                    </Btn>
                   ) : null}
                   {(p.status === 1 || p.status === 2) && detail?.status === 4 ? (
                     <Btn
