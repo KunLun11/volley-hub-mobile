@@ -149,6 +149,12 @@ export interface PlayerProfile {
   has_profile?: boolean;
 }
 
+/** Счёт одной партии матча. */
+export interface SetScore {
+  team_1: number;
+  team_2: number;
+}
+
 export interface GameList {
   id: number;
   title: string;
@@ -161,6 +167,13 @@ export interface GameList {
   skill_level: number;
   status: number;
   gender: number;
+  /** Итог матча: номер победившей команды (после завершения). */
+  winner_team?: number | null;
+  /** Счёт партий: [{ team_1: 25, team_2: 21 }, ...]. */
+  set_scores?: SetScore[];
+  team_1_sets_won?: number;
+  team_2_sets_won?: number;
+  result_finalized_at?: string | null;
 }
 
 export interface GameDetail {
@@ -189,6 +202,12 @@ export interface GameDetail {
   description?: string;
   is_tournament?: boolean;
   is_participant?: boolean;
+  /** Итог матча (заполняется организатором после игры). */
+  winner_team?: number | null;
+  set_scores?: SetScore[];
+  team_1_sets_won?: number;
+  team_2_sets_won?: number;
+  result_finalized_at?: string | null;
 }
 
 export interface MeSchema {
@@ -238,6 +257,13 @@ export interface GameParticipant {
   registered_at: string;
   cancelled_at?: string | null;
   checked_in_at?: string | null;
+  /** Номер команды (игроки делятся по 6 человек). */
+  team?: number | null;
+  /** 0 — не определён, 1 — победа, 2 — поражение. */
+  result?: number;
+  result_display?: string;
+  elo_before?: number | null;
+  elo_after?: number | null;
 }
 
 /** GET /api/v1/profiles/users/<uuid>/ :: UserProfileView

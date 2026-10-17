@@ -25,7 +25,7 @@ import {
   formatMoney,
 } from '../components/ui';
 import { formatMs, useAuth, useCountdown, useToast } from '../store';
-import { colors, radius, spacing } from '../theme';
+import { colors, fontMono, radius, spacing } from '../theme';
 
 interface ParticipantLite {
   id: number;
@@ -33,6 +33,10 @@ interface ParticipantLite {
   player_elo: number;
   status: number;
   player_user_id?: string | null;
+  team?: number | null;
+  result?: number;
+  elo_before?: number | null;
+  elo_after?: number | null;
 }
 
 /** Б2. Карточка игры + Б3. Оплата (MVP: перевод по номеру). */
@@ -89,6 +93,29 @@ export default function GameDetailsScreen() {
     const spread = Math.max(...elos) - Math.min(...elos);
     return { avg, spread };
   }, [participants]);
+
+  /** Игроки делятся на команды по 6 человек — группируем для отображения. */
+  const teamGroups = useMemo(() => {
+    const groups = new Map<number, ParticipantLite[]>();
+    const unassigned: ParticipantLite[] = [];
+    for (const p of participants) {
+      if (p.team == null) {
+        unassigned.push(p);
+        continue;
+      }
+      const list = groups.get(p.team) ?? [];
+      list.push(p);
+      groups.set(p.team, list);
+    }
+    return {
+      groups: [...groups.entries()].sort((a, b) => a[0] - b[0]),
+      unassigned,
+    };
+  }, [participants]);
+
+  const setScores = detail?.set_scores ?? [];
+  const hasScore = setScores.length > 0;
+  const hasResult = detail?.result_finalized_at != null || detail?.winner_team != null;
 
   async function doRegister() {
     if (!isAuth) return nav.navigate('Login');
@@ -211,6 +238,43 @@ export default function GameDetailsScreen() {
               </Banner>
             ) : null}
 
+            {/* Итог матча: победившая команда + счёт партий */}
+            {detail.status === 4 && hasResult ? (
+              <Card style={{ gap: spacing.sm }}>
+                <Text style={styles.h3}>Итог матча</Text>
+                <View style={styles.resultRow}>
+                  <Text
+                    style={[
+                      styles.resultTeam,
+                      detail.winner_team === 1 && styles.resultWinner,
+                    ]}
+                  >
+                    Команда 1
+                    {detail.winner_team === 1 ? ' 🏆' : ''}
+                  </Text>
+                  <Text style={styles.resultScore}>
+                    {detail.team_1_sets_won ?? 0} : {detail.team_2_sets_won ?? 0}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.resultTeam,
+                      { textAlign: 'right' },
+                      detail.winner_team === 2 && styles.resultWinner,
+                    ]}
+                  >
+                    {detail.winner_team === 2 ? '🏆 ' : ''}
+                    Команда 2
+                  </Text>
+                </View>
+                {hasScore ? (
+                  <Text style={styles.setsLine}>
+                    Партии: {setScores.map((s) => `${s.team_1}:${s.team_2}`).join(' · ')}
+                  </Text>
+                ) : null}
+                <Text style={styles.muted}>Победители: +20 ELO · проигравшие: −20 ELO</Text>
+              </Card>
+            ) : null}
+
             {/* Действия */}
             <Card style={{ gap: spacing.md }}>
               {isOpen && myStatus === 'none' ? (
@@ -278,43 +342,94 @@ export default function GameDetailsScreen() {
                 variant={full ? 'danger' : 'info'}
               />
               <View style={{ gap: spacing.sm }}>
-                {participants.map((p) => {
-                  const uid = p.player_user_id;
-                  const row = (
-                    <>
-                      <Avatar name={p.player_name} size={36} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.pName}>{p.player_name}</Text>
-                        <Text style={styles.pSub}>ELO {p.player_elo}</Text>
-                      </View>
-                      <View
-                        style={[
-                          styles.pBadge,
-                          p.status === 2 ? { backgroundColor: colors.successBg } : { backgroundColor: colors.infoBg },
-                        ]}
-                      >
-                        <Text style={{ color: p.status === 2 ? colors.success : colors.primary, fontSize: 12, fontWeight: '600' }}>
-                          {p.status === 2 ? 'Оплачено' : 'Записан'}
+                {[...teamGroups.groups, [null, teamGroups.unassigned] as [null, ParticipantLite[]]]
+                  .filter(([, list]) => list.length > 0)
+                  .map(([teamNo, list]) => (
+                    <View key={String(teamNo)} style={{ gap: spacing.sm }}>
+                      <View style={styles.teamHead}>
+                        <Text style={styles.teamTitle}>
+                          {teamNo == null ? 'Без команды' : `Команда ${teamNo}`}
                         </Text>
+                        {hasResult && teamNo != null && detail.winner_team === teamNo ? (
+                          <View style={styles.winBadge}>
+                            <Text style={styles.winBadgeText}>Победа</Text>
+                          </View>
+                        ) : null}
                       </View>
-                    </>
-                  );
-                  return uid ? (
-                    <Pressable
-                      key={p.id}
-                      onPress={() => nav.navigate('UserProfile', { id: uid })}
-                      style={({ pressed }) => [styles.participant, styles.participantLink, pressed && styles.pressed]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Открыть профиль ${p.player_name}`}
-                    >
-                      {row}
-                    </Pressable>
-                  ) : (
-                    <View key={p.id} style={styles.participant}>
-                      {row}
+                      {list.map((p) => {
+                        const uid = p.player_user_id;
+                        const delta =
+                          p.elo_before != null && p.elo_after != null ? p.elo_after - p.elo_before : null;
+                        const row = (
+                          <>
+                            <Avatar name={p.player_name} size={36} />
+                            <View style={{ flex: 1 }}>
+                              <Text style={styles.pName}>{p.player_name}</Text>
+                              <Text style={styles.pSub}>ELO {p.player_elo}</Text>
+                            </View>
+                            <View
+                              style={[
+                                styles.pBadge,
+                                p.status === 2
+                                  ? { backgroundColor: colors.successBg }
+                                  : { backgroundColor: colors.infoBg },
+                              ]}
+                            >
+                              <Text
+                                style={{
+                                  color: p.status === 2 ? colors.success : colors.primary,
+                                  fontSize: 12,
+                                  fontWeight: '600',
+                                }}
+                              >
+                                {p.status === 2 ? 'Оплачено' : 'Записан'}
+                              </Text>
+                            </View>
+                            {hasResult && p.result ? (
+                              <View
+                                style={[
+                                  styles.pBadge,
+                                  p.result === 1
+                                    ? { backgroundColor: colors.successBg }
+                                    : { backgroundColor: colors.dangerBg },
+                                ]}
+                              >
+                                <Text
+                                  style={{
+                                    color: p.result === 1 ? colors.success : colors.danger,
+                                    fontSize: 12,
+                                    fontWeight: '600',
+                                  }}
+                                >
+                                  {p.result === 1 ? 'Победа' : 'Поражение'}
+                                  {delta != null ? ` ${delta > 0 ? '+' : ''}${delta}` : ''}
+                                </Text>
+                              </View>
+                            ) : null}
+                          </>
+                        );
+                        return uid ? (
+                          <Pressable
+                            key={p.id}
+                            onPress={() => nav.navigate('UserProfile', { id: uid })}
+                            style={({ pressed }) => [
+                              styles.participant,
+                              styles.participantLink,
+                              pressed && styles.pressed,
+                            ]}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Открыть профиль ${p.player_name}`}
+                          >
+                            {row}
+                          </Pressable>
+                        ) : (
+                          <View key={p.id} style={styles.participant}>
+                            {row}
+                          </View>
+                        );
+                      })}
                     </View>
-                  );
-                })}
+                  ))}
                 {participants.length === 0 ? <Text style={styles.muted}>Пока никого. Будьте первым!</Text> : null}
               </View>
             </Card>
@@ -440,6 +555,15 @@ const styles = StyleSheet.create({
   pName: { color: colors.textMain, fontSize: 14, fontWeight: '600' },
   pSub: { color: colors.textSub, fontSize: 12 },
   pBadge: { borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 },
+  teamHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
+  teamTitle: { color: colors.textSub, fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
+  winBadge: { backgroundColor: colors.successBg, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 2 },
+  winBadgeText: { color: colors.success, fontSize: 11, fontWeight: '700' },
+  resultRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  resultTeam: { color: colors.textSub, fontSize: 14, flex: 1 },
+  resultWinner: { color: colors.success, fontWeight: '700' },
+  resultScore: { color: colors.gold, fontSize: 24, fontWeight: '700', fontFamily: fontMono },
+  setsLine: { color: colors.textSub, fontSize: 12, letterSpacing: 1, fontFamily: fontMono },
   paidRow: { backgroundColor: colors.successBg, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
   paidText: { color: colors.success, fontWeight: '700', fontSize: 15 },
   body: { color: colors.textSub, fontSize: 14, lineHeight: 20 },

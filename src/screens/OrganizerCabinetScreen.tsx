@@ -132,8 +132,8 @@ export default function OrganizerCabinetScreen() {
                     </>
                   ) : null}
                   {g.status === 2 || g.status === 3 ? (
-                    <Btn kind="success" small onPress={() => act(g.id, api.completeGame, 'Игра завершена — ELO пересчитан')}>
-                      Завершить
+                    <Btn kind="success" small onPress={() => nav.navigate('ManageGame', { id: g.id })}>
+                      Итоги / счёт
                     </Btn>
                   ) : null}
                 </View>

@@ -15,6 +15,7 @@ import RegisterScreen from '../screens/RegisterScreen';
 import VerifyScreen from '../screens/VerifyScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import GameDetailsScreen from '../screens/GameDetailsScreen';
+import MatchHistoryScreen from '../screens/MatchHistoryScreen';
 import CreateGameScreen from '../screens/CreateGameScreen';
 import OrganizerCabinetScreen from '../screens/OrganizerCabinetScreen';
 import ManageGameScreen from '../screens/ManageGameScreen';
@@ -27,6 +28,7 @@ export type RootStackParamList = {
   Verify: { email?: string } | undefined;
   Onboarding: undefined;
   GameDetails: { id: number };
+  MatchHistory: undefined;
   CreateGame: undefined;
   Organizer: undefined;
   ManageGame: { id: number };
@@ -169,6 +171,7 @@ export default function RootNavigator() {
       <Stack.Screen name="Verify" component={VerifyScreen} />
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="GameDetails" component={GameDetailsScreen} />
+      <Stack.Screen name="MatchHistory" component={MatchHistoryScreen} />
       <Stack.Screen name="CreateGame" component={CreateGameScreen} />
       <Stack.Screen name="Organizer" component={OrganizerCabinetScreen} />
       <Stack.Screen name="ManageGame" component={ManageGameScreen} />

@@ -100,6 +100,11 @@ export default function GamesListScreen() {
       <View>
         <Text style={styles.h1}>Открытые игры</Text>
         <Text style={styles.sub}>Запись в один клик · уровень виден сразу · без чатов</Text>
+        <View style={{ alignSelf: 'flex-start', marginTop: spacing.sm }}>
+          <Btn kind="secondary" small onPress={() => nav.navigate('MatchHistory')}>
+            История матчей
+          </Btn>
+        </View>
       </View>
 
       {/* Фильтры: поиск с лупой + поп-апы «Даты» и «Уровень» */}

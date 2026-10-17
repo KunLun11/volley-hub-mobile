@@ -16,9 +16,10 @@
                POST /profiles/profile/ | PATCH users/<uuid>/profile/
    Games       GET  /games/?title&status&skill_level&gender&date_from&date_to&page
                GET  /games/<id>/ | <id>/participants/ | my-games/ | organized/ | locations/
+               GET  /games/history/                 (история завершённых матчей)
                POST /games/ (create)
                POST /games/<id>/register/ | cancel-registration/ | confirm/ | attend/
-                         | publish/ | close-registration/ | complete/ | cancel/
+                         | publish/ | close-registration/ | complete/ | result/ | cancel/
                          | confirm-participant/<participant_id>/
                          | remove-participant/<participant_id>/
                          | no-show/<participant_id>/
@@ -39,6 +40,7 @@ import type {
   Paginated,
   PlayerProfile,
   PlayerProfileUpdate,
+  SetScore,
   TokenPair,
   UserCreatePayload,
   UserProfileResponse,
@@ -195,6 +197,16 @@ function adaptGame(g: Record<string, any>): GameList {
     skill_level: Number(g.skill_level ?? 4),
     status: Number(g.status ?? 1),
     gender: Number(g.gender ?? 0),
+    winner_team: g.winner_team == null ? null : Number(g.winner_team),
+    set_scores: Array.isArray(g.set_scores)
+      ? (g.set_scores as SetScore[]).map((s) => ({
+          team_1: Number(s.team_1 ?? 0),
+          team_2: Number(s.team_2 ?? 0),
+        }))
+      : [],
+    team_1_sets_won: Number(g.team_1_sets_won ?? 0),
+    team_2_sets_won: Number(g.team_2_sets_won ?? 0),
+    result_finalized_at: (g.result_finalized_at as string | null) ?? null,
   };
 }
 
@@ -233,6 +245,11 @@ function adaptParticipant(p: Record<string, any>): GameParticipant & { player_na
     registered_at: p.registered_at ?? '',
     cancelled_at: p.cancelled_at ?? null,
     checked_in_at: p.checked_in_at ?? null,
+    team: p.team == null ? null : Number(p.team),
+    result: Number(p.result ?? 0),
+    result_display: p.result_display ?? '',
+    elo_before: p.elo_before == null ? null : Number(p.elo_before),
+    elo_after: p.elo_after == null ? null : Number(p.elo_after),
   };
 }
 
@@ -407,7 +424,22 @@ export const api = {
 
   cancelGame: (id: number): Promise<unknown> => request(`/games/${id}/cancel/`, { method: 'POST' }),
 
-  completeGame: (id: number): Promise<unknown> => request(`/games/${id}/complete/`, { method: 'POST' }),
+  /** Завершение игры с результатом: победившая команда + счёт партий. */
+  completeGame: (id: number, body: { winner_team: number; set_scores: SetScore[] }): Promise<GameDetail> =>
+    request<Record<string, any>>(`/games/${id}/result/`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }).then(adaptGameDetail),
+
+  /** История завершённых матчей (публичная). */
+  gameHistory: (): Promise<GameList[]> =>
+    requestList<Record<string, any>>('/games/history/').then((list) => list.map(adaptGame)),
+
+  setGameResult: (id: number, body: { winner_team: number; set_scores: SetScore[] }): Promise<GameDetail> =>
+    request<Record<string, any>>(`/games/${id}/result/`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }).then(adaptGameDetail),
 
   markPaid: (gameId: number, participantId: number): Promise<unknown> =>
     request(`/games/${gameId}/confirm-participant/${participantId}/`, { method: 'POST' }),
