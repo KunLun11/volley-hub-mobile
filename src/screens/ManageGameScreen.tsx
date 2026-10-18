@@ -364,7 +364,7 @@ export default function ManageGameScreen() {
                   <Btn
                     kind={isCurrent ? 'success' : 'secondary'}
                     small
-                    onPress={() => assignResponsible(isCurrent ? null : p.player_id)}
+                    onPress={() => assignResponsible(isCurrent ? null : p.id)}
                   >
                     {isCurrent ? 'Снять' : 'Назначить'}
                   </Btn>
