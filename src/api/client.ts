@@ -269,6 +269,14 @@ function adaptMyGame(m: Record<string, any>): MyGame {
   return {
     participant_id: m.participant_id ?? m.id,
     participant_status: Number(m.status ?? 1),
+    has_review: !!(m.has_review ?? m.review),
+    review: m.review
+      ? {
+          rating_game: Number(m.review.rating_game ?? 0),
+          matched: !!m.review.matched,
+          created_at: m.review.created_at ?? undefined,
+        }
+      : null,
     game: adaptGame(m.game ?? {}),
     detail: m.game ? adaptGameDetail(m.game) : undefined,
   };
@@ -489,5 +497,10 @@ export const api = {
   markNoShow: (gameId: number, participantId: number): Promise<unknown> =>
     request(`/games/${gameId}/no-show/${participantId}/`, { method: 'POST' }),
 
-  submitReview: (_gameId: number, _matched: boolean): Promise<unknown> => Promise.resolve(null),
+  /** Отметка «совпал ли уровень игры» — один раз на игру (повтор → 409). */
+  submitReview: (gameId: number, matched: boolean): Promise<unknown> =>
+    request(`/games/${gameId}/review/`, {
+      method: 'POST',
+      body: JSON.stringify({ matched }),
+    }),
 };

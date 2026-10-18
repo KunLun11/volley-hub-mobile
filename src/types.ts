@@ -249,10 +249,19 @@ export interface PlayerProfileUpdate {
   photo?: string;
 }
 
+export interface GameLevelReview {
+  rating_game: number;
+  matched: boolean;
+  created_at?: string;
+}
+
 export interface MyGame {
   game: GameList;
   participant_status: number;
   participant_id: number;
+  /** Игрок уже оценил уровень этой игры (одна отметка на игру). */
+  has_review: boolean;
+  review?: GameLevelReview | null;
   detail?: GameDetail;
 }
 

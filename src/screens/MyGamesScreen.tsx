@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
@@ -38,6 +38,24 @@ export default function MyGamesScreen() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const submitReview = async (gameId: number, matched: boolean) => {
+    try {
+      await api.submitReview(gameId, matched);
+      toast.push('Спасибо! Отметка сохранена', 'success');
+      load();
+    } catch (e) {
+      toast.push(e instanceof Error ? e.message : 'Не удалось сохранить оценку', 'error');
+    }
+  };
+
+  const rateGame = (gameId: number) => {
+    Alert.alert('Уровень игры', 'Совпал ли уровень игры с ожиданиями?', [
+      { text: '👍 Совпало', onPress: () => submitReview(gameId, true) },
+      { text: '👎 Не совпало', onPress: () => submitReview(gameId, false) },
+      { text: 'Отмена', style: 'cancel' },
+    ]);
+  };
 
   const now = Date.now();
   const filtered = (games ?? []).filter((m) => {
@@ -95,14 +113,14 @@ export default function MyGamesScreen() {
                   <ParticipantStatusBadge status={m.participant_status} />
                   <Text style={styles.metaText}>{formatMoney(m.game.price)}</Text>
                 </View>
-                {past && m.participant_status !== 4 ? (
-                  <Btn
-                    kind="secondary"
-                    small
-                    onPress={() => toast.push('Оценка уровня игры — в разработке', 'info')}
-                  >
-                    Оценить уровень игры →
-                  </Btn>
+                {past && m.participant_status !== 4 && m.participant_status !== 5 ? (
+                  m.has_review ? (
+                    <Text style={styles.reviewed}>✓ Уровень оценён</Text>
+                  ) : (
+                    <Btn kind="secondary" small onPress={() => rateGame(m.game.id)}>
+                      Оценить уровень игры →
+                    </Btn>
+                  )
                 ) : null}
               </View>
             );
@@ -117,4 +135,5 @@ const styles = StyleSheet.create({
   h1: { color: colors.textMain, fontSize: 28, fontWeight: '700' },
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   metaText: { color: colors.gold, fontWeight: '700', fontFamily: fontMono },
+  reviewed: { color: colors.success, fontSize: 13, fontWeight: '600' },
 });
