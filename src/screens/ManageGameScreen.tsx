@@ -20,10 +20,13 @@ import {
   formatMoney,
 } from '../components/ui';
 import { useToast } from '../store';
+import ScoreEntry from '../components/ScoreEntry';
 import { colors, fontMono, radius, spacing } from '../theme';
 
 interface ParticipantLite {
   id: number;
+  /** id профиля игрока (совпадает с responsible.id). */
+  player_id: number;
   player_name: string;
   player_elo: number;
   status: number; // 1 registered, 2 confirmed, 3 attended, 4 no_show
@@ -45,6 +48,7 @@ export default function ManageGameScreen() {
   const [players, setPlayers] = useState<ParticipantLite[]>([]);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [resultModal, setResultModal] = useState(false);
+  const [responsibleModal, setResponsibleModal] = useState(false);
   const [winnerTeam, setWinnerTeam] = useState<number>(1);
   const [setScores, setSetScores] = useState<SetScore[]>([{ team_1: 0, team_2: 0 }]);
   const [savingResult, setSavingResult] = useState(false);
@@ -82,6 +86,10 @@ export default function ManageGameScreen() {
   const hasResult = !!detail?.result_finalized_at;
   const canFinalize =
     (detail?.status === 2 || detail?.status === 3 || detail?.status === 4) && !hasResult;
+  /** Ввод счёта доступен организатору до фиксации результата. */
+  const canEnterScore = Boolean(
+    !hasResult && (detail?.status === 2 || detail?.status === 3 || detail?.status === 4),
+  );
 
   function openResultModal() {
     setWinnerTeam(teamNumbers[0] ?? 1);
@@ -110,6 +118,21 @@ export default function ManageGameScreen() {
       toast.push(e instanceof Error ? e.message : 'Не удалось сохранить результат', 'error');
     } finally {
       setSavingResult(false);
+    }
+  }
+
+  /** Назначить ответственного за счёт (null — снять). */
+  async function assignResponsible(participantId: number | null) {
+    try {
+      await api.assignResponsible(gid, participantId);
+      toast.push(
+        participantId ? 'Ответственный за счёт назначен' : 'Ответственный за счёт снят',
+        'success',
+      );
+      setResponsibleModal(false);
+      load();
+    } catch (e) {
+      toast.push(e instanceof Error ? e.message : 'Не удалось назначить ответственного', 'error');
     }
   }
 
@@ -190,8 +213,36 @@ export default function ManageGameScreen() {
                 ) : null}
               </View>
             ) : null}
+
+            {/* Ответственный за счёт: назначает организатор */}
+            <View style={styles.responsibleRow}>
+              <Text style={styles.meta}>
+                Ответственный за счёт:{' '}
+                <Text style={{ color: colors.textMain, fontWeight: '700' }}>
+                  {detail.responsible
+                    ? `${detail.responsible.first_name} ${detail.responsible.last_name}`.trim()
+                    : 'не назначен'}
+                </Text>
+              </Text>
+              {!hasResult ? (
+                <Btn kind="secondary" small onPress={() => setResponsibleModal(true)}>
+                  {detail.responsible ? 'Изменить' : 'Назначить'}
+                </Btn>
+              ) : null}
+            </View>
           </Card>
         )}
+
+        {/* Счёт партий: организатор или ответственный вводит после каждого сета */}
+        {detail ? (
+          <ScoreEntry
+            gameId={gid}
+            setScores={detail.set_scores ?? []}
+            canEdit={canEnterScore}
+            hint="Вводите результат партии сразу после её окончания."
+            onSaved={load}
+          />
+        ) : null}
 
         <Card style={{ gap: spacing.md }}>
           <Text style={styles.h3}>Участники</Text>
@@ -290,6 +341,44 @@ export default function ManageGameScreen() {
           </Text>
         </Card>
       </ScrollView>
+
+      {/* Назначение ответственного за счёт */}
+      <Modal visible={responsibleModal} onClose={() => setResponsibleModal(false)}>
+        <Text style={styles.h3}>Ответственный за счёт</Text>
+        <Text style={styles.muted}>
+          Выберите участника, который в перерывах между партиями будет вводить счёт. Он увидит форму ввода на
+          странице игры.
+        </Text>
+        <ScrollView style={{ maxHeight: 360 }} contentContainerStyle={{ gap: spacing.sm, marginTop: spacing.md }}>
+          {players
+            .filter((p) => p.status === 1 || p.status === 2 || p.status === 3)
+            .map((p) => {
+              const isCurrent = detail?.responsible?.id === p.player_id;
+              return (
+                <View key={p.id} style={styles.participant}>
+                  <Avatar name={p.player_name} size={36} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.pName}>{p.player_name}</Text>
+                    <Text style={styles.pSub}>ELO {p.player_elo}</Text>
+                  </View>
+                  <Btn
+                    kind={isCurrent ? 'success' : 'secondary'}
+                    small
+                    onPress={() => assignResponsible(isCurrent ? null : p.player_id)}
+                  >
+                    {isCurrent ? 'Снять' : 'Назначить'}
+                  </Btn>
+                </View>
+              );
+            })}
+          {players.length === 0 ? <Text style={styles.muted}>В игре пока нет участников.</Text> : null}
+        </ScrollView>
+        <View style={styles.modalActions}>
+          <Btn kind="ghost" onPress={() => setResponsibleModal(false)}>
+            Закрыть
+          </Btn>
+        </View>
+      </Modal>
 
       {/* Фиксация результата: победившая команда + счёт партий */}
       <Modal visible={resultModal} onClose={() => setResultModal(false)}>
@@ -392,6 +481,12 @@ const styles = StyleSheet.create({
   statusText: { fontSize: 12, fontWeight: '600' },
   actionsCol: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', width: '100%' },
   resultLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
+  responsibleRow: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.md,
+    gap: spacing.sm,
+  },
   resultScore: { color: colors.gold, fontSize: 20, fontWeight: '700', fontFamily: fontMono },
   setsLine: { color: colors.textSub, fontSize: 12, fontFamily: fontMono, letterSpacing: 1 },
   label: { color: colors.textMain, fontSize: 14, fontWeight: '700', marginTop: spacing.md },

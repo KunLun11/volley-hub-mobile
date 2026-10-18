@@ -25,10 +25,13 @@ import {
   formatMoney,
 } from '../components/ui';
 import { formatMs, useAuth, useCountdown, useToast } from '../store';
+import ScoreEntry from '../components/ScoreEntry';
 import { colors, fontMono, radius, spacing } from '../theme';
 
 interface ParticipantLite {
   id: number;
+  /** id профиля игрока (совпадает с responsible.id). */
+  player_id?: number;
   player_name: string;
   player_elo: number;
   status: number;
@@ -116,6 +119,12 @@ export default function GameDetailsScreen() {
   const setScores = detail?.set_scores ?? [];
   const hasScore = setScores.length > 0;
   const hasResult = detail?.result_finalized_at != null || detail?.winner_team != null;
+  /** Счёт партий может вводить организатор или назначенный ответственный. */
+  const canEnterScore = Boolean(
+    (detail?.is_organizer || detail?.is_responsible) &&
+      detail?.result_finalized_at == null &&
+      (detail?.status === 2 || detail?.status === 3 || detail?.status === 4),
+  );
 
   async function doRegister() {
     if (!isAuth) return nav.navigate('Login');
@@ -275,6 +284,25 @@ export default function GameDetailsScreen() {
               </Card>
             ) : null}
 
+            {/* Счёт партий: ввод ответственным в перерывах между сетами */}
+            {detail &&
+            (canEnterScore ||
+              (setScores.length > 0 && (detail.status === 2 || detail.status === 3))) ? (
+              <ScoreEntry
+                gameId={gid}
+                setScores={setScores}
+                canEdit={canEnterScore}
+                hint={
+                  detail.is_responsible
+                    ? 'Вы ответственный за счёт. В перерыве между партиями вводите результат сыгранного сета.'
+                    : detail.is_organizer
+                      ? 'Вы организатор: вводите счёт партий или назначьте ответственного в кабинете организатора.'
+                      : 'Счёт партий обновляет ответственный за счёт.'
+                }
+                onSaved={load}
+              />
+            ) : null}
+
             {/* Действия */}
             <Card style={{ gap: spacing.md }}>
               {isOpen && myStatus === 'none' ? (
@@ -385,6 +413,13 @@ export default function GameDetailsScreen() {
                                 {p.status === 2 ? 'Оплачено' : 'Записан'}
                               </Text>
                             </View>
+                            {detail.responsible?.id === p.player_id ? (
+                              <View style={[styles.pBadge, { backgroundColor: colors.infoBg }]}>
+                                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '600' }}>
+                                  Ответственный за счёт
+                                </Text>
+                              </View>
+                            ) : null}
                             {hasResult && p.result ? (
                               <View
                                 style={[

@@ -217,6 +217,18 @@ function adaptGameDetail(d: Record<string, any>): GameDetail {
     description: d.description ?? '',
     is_tournament: !!d.is_tournament,
     is_participant: !!d.is_participant,
+    is_organizer: !!d.is_organizer,
+    is_responsible: !!d.is_responsible,
+    responsible: d.responsible
+      ? {
+          id: Number(d.responsible.id ?? 0),
+          user: d.responsible.user ?? '',
+          first_name: d.responsible.first_name ?? '',
+          last_name: d.responsible.last_name ?? '',
+          photo: d.responsible.photo ?? null,
+          elo_rating: Number(d.responsible.elo_rating ?? 0),
+        }
+      : null,
     location: adaptLocation(d.location),
     organizer: {
       id: organizer.id ?? 0,
@@ -439,6 +451,29 @@ export const api = {
     request<Record<string, any>>(`/games/${id}/result/`, {
       method: 'POST',
       body: JSON.stringify(body),
+    }).then(adaptGameDetail),
+
+  /** Организатор назначает/снимает ответственного за счёт (participantId=null — снять). */
+  assignResponsible: (id: number, participantId: number | null): Promise<GameDetail> =>
+    request<Record<string, any>>(`/games/${id}/responsible/`, {
+      method: 'POST',
+      body: JSON.stringify({ participant_id: participantId }),
+    }).then(adaptGameDetail),
+
+  /** Организатор или ответственный вводит счёт партии (index — изменить существующую). */
+  saveSetScore: (
+    id: number,
+    body: { team_1: number; team_2: number; index?: number | null },
+  ): Promise<GameDetail> =>
+    request<Record<string, any>>(`/games/${id}/sets/`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }).then(adaptGameDetail),
+
+  /** Удалить ошибочно введённую партию. */
+  deleteSetScore: (id: number, index: number): Promise<GameDetail> =>
+    request<Record<string, any>>(`/games/${id}/sets/${index}/`, {
+      method: 'DELETE',
     }).then(adaptGameDetail),
 
   markPaid: (gameId: number, participantId: number): Promise<unknown> =>

@@ -202,6 +202,19 @@ export interface GameDetail {
   description?: string;
   is_tournament?: boolean;
   is_participant?: boolean;
+  /** true — текущий пользователь организатор этой игры (для ввода счёта). */
+  is_organizer?: boolean;
+  /** true — текущий пользователь назначен ответственным за счёт. */
+  is_responsible?: boolean;
+  /** Ответственный за счёт: назначается организатором из числа участников. */
+  responsible?: {
+    id: number;
+    user?: string;
+    first_name: string;
+    last_name: string;
+    photo?: string | null;
+    elo_rating?: number;
+  } | null;
   /** Итог матча (заполняется организатором после игры). */
   winner_team?: number | null;
   set_scores?: SetScore[];
