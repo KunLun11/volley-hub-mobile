@@ -25,6 +25,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { avatarHue, colors, fontMono, LEVEL_COLORS, radius, spacing } from '../theme';
 import { useAuth } from '../store';
+import { api } from '../api/client';
 
 /* ---------------- Форматирование (копия веб-хелперов) ---------------- */
 
@@ -461,6 +462,8 @@ export function AppHeader() {
               danger
               onPress={() => {
                 setOpen(false);
+                // Best-effort отзыв токенов; локально выходим сразу.
+                void api.logout();
                 logout();
                 nav.navigate('Tabs', { screen: 'Games' });
               }}

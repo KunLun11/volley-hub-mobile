@@ -97,6 +97,112 @@ export function hasTokens(): boolean {
   return Boolean(accessToken && refreshToken);
 }
 
+/** Сессия больше недействительна (refresh отклонён сервером). */
+let sessionExpiredHandler: (() => void) | null = null;
+
+/** AuthContext регистрирует здесь выход из аккаунта. Возвращает отписку. */
+export function setSessionExpiredHandler(fn: (() => void) | null): () => void {
+  sessionExpiredHandler = fn;
+  return () => {
+    if (sessionExpiredHandler === fn) sessionExpiredHandler = null;
+  };
+}
+
+/** base64url → строка (atob есть не во всех сборках Hermes). */
+function base64UrlDecode(input: string): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+  let str = input.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  let output = '';
+  let buffer = 0;
+  let bits = 0;
+  for (const ch of str) {
+    if (ch === '=') break;
+    const idx = chars.indexOf(ch);
+    if (idx === -1) continue;
+    buffer = (buffer << 6) | idx;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      output += String.fromCharCode((buffer >> bits) & 0xff);
+    }
+  }
+  return output;
+}
+
+/** exp (мс) из JWT. Подпись проверяет бэкенд, здесь нужен только срок. */
+function tokenExpiresAt(token: string): number | null {
+  try {
+    const payload = JSON.parse(base64UrlDecode(token.split('.')[1]));
+    return typeof payload.exp === 'number' ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+function accessTokenNeedsRefresh(skewMs = 60_000): boolean {
+  if (!accessToken) return true;
+  const exp = tokenExpiresAt(accessToken);
+  return exp !== null && exp - Date.now() <= skewMs;
+}
+
+function expireSession(): void {
+  setTokens(null);
+  sessionExpiredHandler?.();
+}
+
+export type RefreshResult = 'ok' | 'expired' | 'error';
+
+let refreshInFlight: Promise<RefreshResult> | null = null;
+
+/**
+ * Обмен refresh → новая пара (с ротацией). Одновременные запросы делят один
+ * сетевой вызов: иначе первый обмен отзывал бы refresh-токен, а остальные
+ * получали 401 и «разлогинивали» пользователя.
+ */
+export function refreshTokens(): Promise<RefreshResult> {
+  if (!refreshToken) return Promise.resolve('expired');
+  if (!refreshInFlight) {
+    const usedToken = refreshToken;
+    refreshInFlight = (async (): Promise<RefreshResult> => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 30_000);
+      try {
+        const res = await fetch(`${API_BASE}/auth/refresh/`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: usedToken }),
+          signal: controller.signal,
+        });
+        if (res.ok) {
+          const data = (await res.json()) as Partial<TokenPair>;
+          if (!data.access) return 'error';
+          setTokens({ access: data.access, refresh: data.refresh ?? usedToken });
+          return 'ok';
+        }
+        if (res.status === 401 || res.status === 403) {
+          expireSession();
+          return 'expired';
+        }
+        return 'error';
+      } catch {
+        return 'error';
+      } finally {
+        clearTimeout(timer);
+        refreshInFlight = null;
+      }
+    })();
+  }
+  return refreshInFlight;
+}
+
+/** Обновление сессии при старте: протухший access сразу меняем по refresh. */
+export async function ensureFreshSession(): Promise<RefreshResult | 'none'> {
+  if (!refreshToken) return 'none';
+  if (accessToken && !accessTokenNeedsRefresh()) return 'ok';
+  return refreshTokens();
+}
+
 function buildQuery(filters: Record<string, string | number | undefined | null>): string {
   const parts: string[] = [];
   Object.entries(filters).forEach(([k, v]) => {
@@ -119,24 +225,14 @@ async function rawFetch(path: string, opts: RequestInit = {}): Promise<Response>
 async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
   let res = await rawFetch(path, opts);
   if ((res.status === 401 || res.status === 403) && refreshToken) {
-    const r = await fetch(`${API_BASE}/auth/refresh/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-    if (r.ok) {
-      const data = (await r.json()) as Partial<TokenPair>;
-      if (data.access && data.refresh) setTokens({ access: data.access, refresh: data.refresh });
-      else if (data.access) setTokens({ access: data.access, refresh: refreshToken });
-      res = await rawFetch(path, opts);
-    } else if (res.status === 401) {
-      setTokens(null);
-      throw new ApiError(401, 'Сессия истекла, войдите заново');
-    }
+    const refreshed = await refreshTokens();
+    if (refreshed === 'ok') res = await rawFetch(path, opts);
+    else if (refreshed === 'expired') throw new ApiError(401, 'Сессия истекла — войдите заново');
+    // 'error' — сеть/5xx: не разлогиниваем, покажем исходную ошибку
   }
-  if (!accessToken && (res.status === 401 || res.status === 403)) {
-    throw new ApiError(res.status, 'Учетные данные не были предоставлены — войдите в систему заново');
-  }
+  // Ошибку показываем как есть. Раньше здесь подменялось сообщение на
+  // «учётные данные не предоставлены», и экран входа/регистрации вместо
+  // реальной причины показывал ложное «войдите заново».
   if (!res.ok) throw new ApiError(res.status, await safeDetail(res));
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
@@ -340,11 +436,28 @@ export const api = {
       return pair;
     }),
 
-  logout: (): Promise<unknown> =>
-    request('/auth/logout/', {
-      method: 'POST',
-      body: JSON.stringify({ refresh_token: refreshToken ?? '' }),
-    }).catch(() => undefined),
+  /** Выход: отзываем access+refresh на бэкенде и чистим токены.
+   *  Идём мимо request(), чтобы не запускать refresh. */
+  logout: async (): Promise<void> => {
+    const token = accessToken;
+    const refresh = refreshToken;
+    try {
+      await fetch(`${API_BASE}/auth/logout/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ refresh_token: refresh ?? '' }),
+      });
+    } catch {
+      // выход локальный в любом случае
+    } finally {
+      // Не затираем токены, если пользователь уже вошёл заново,
+      // пока запрос выхода летел на сервер.
+      if (accessToken === token && refreshToken === refresh) setTokens(null);
+    }
+  },
 
   register: (body: UserCreatePayload): Promise<unknown> =>
     request('/register/user/', { method: 'POST', body: JSON.stringify(body) }),

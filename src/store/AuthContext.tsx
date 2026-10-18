@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { hasTokens, loadTokens, setTokens } from '../api/client';
+import { ensureFreshSession, hasTokens, loadTokens, setSessionExpiredHandler, setTokens } from '../api/client';
 
 export type Role = 'player' | 'organizer';
 
@@ -37,7 +37,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       await loadTokens();
       const pairs = await AsyncStorage.multiGet(['va_logged', 'va_role', 'va_name']);
-      const logged = pairs[0][1] === '1' && hasTokens();
+      const loggedFlag = pairs[0][1] === '1';
+      let logged = loggedFlag && hasTokens();
+      if (logged) {
+        // Протухший access обмениваем на новую пару, протухший refresh —
+        // честный выход (сессия живёт месяц без визитов).
+        const result = await ensureFreshSession();
+        if (result === 'expired' || result === 'none') {
+          logged = false;
+          await AsyncStorage.multiRemove(['va_logged', 'va_access', 'va_refresh']);
+        }
+      } else if (loggedFlag) {
+        // Флаг входа остался без токенов (старый баг) — чистим.
+        await AsyncStorage.multiRemove(['va_logged', 'va_access', 'va_refresh']);
+      }
       const storedRole = (pairs[1][1] as Role) || 'player';
       const storedName = pairs[2][1] || 'Михаил';
       setIsAuth(logged);
@@ -65,6 +78,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setTokens(null);
     void AsyncStorage.multiRemove(['va_logged', 'va_access', 'va_refresh']);
   }, []);
+
+  // Refresh отклонён сервером (истёк/отозван) — гасим сессию.
+  useEffect(() => setSessionExpiredHandler(() => logout()), [logout]);
 
   const setRole = useCallback((r: Role) => {
     setRoleState(r);
