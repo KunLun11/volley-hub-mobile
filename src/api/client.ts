@@ -18,7 +18,7 @@
                GET  /games/<id>/ | <id>/participants/ | my-games/ | organized/ | locations/
                GET  /games/history/                 (история завершённых матчей)
                POST /games/ (create)
-               POST /games/<id>/register/ | cancel-registration/ | confirm/ | attend/
+               POST /games/<id>/register/ | cancel-registration/ | attend/
                          | publish/ | close-registration/ | complete/ | result/ | cancel/
                          | confirm-participant/<participant_id>/
                          | remove-participant/<participant_id>/
@@ -544,8 +544,6 @@ export const api = {
       if (e instanceof ApiError && e.status === 204) return undefined;
       throw e;
     }),
-
-  confirmPayment: (id: number): Promise<unknown> => request(`/games/${id}/confirm/`, { method: 'POST' }),
 
   attend: (id: number): Promise<unknown> => request(`/games/${id}/attend/`, { method: 'POST' }),
 

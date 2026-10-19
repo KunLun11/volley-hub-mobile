@@ -161,21 +161,6 @@ export default function GameDetailsScreen() {
     }
   }
 
-  async function confirmPaid() {
-    setBusy(true);
-    try {
-      await api.confirmPayment(gid);
-      setMyStatus('confirmed');
-      setPayModal(false);
-      toast.push('Статус обновлён: оплачено', 'success');
-    } catch (e) {
-      toast.push(e instanceof Error ? e.message : 'Ошибка', 'error');
-    } finally {
-      setBusy(false);
-      load();
-    }
-  }
-
   async function doAttend() {
     setBusy(true);
     try {
@@ -588,7 +573,7 @@ export default function GameDetailsScreen() {
       <Modal visible={payModal} onClose={() => setPayModal(false)}>
         <Text style={styles.modalTitle}>Оплата участия</Text>
         <Text style={styles.modalText}>
-          Переведите {formatMoney(detail?.price)} по номеру телефона организатора, затем подтвердите статус.
+          Переведите {formatMoney(detail?.price)} по номеру телефона организатора — оплату отметит организатор.
         </Text>
         <View style={styles.copyRow}>
           <Text style={styles.phone}>+7 900 123-45-67</Text>
@@ -600,12 +585,7 @@ export default function GameDetailsScreen() {
           Статус сейчас: не оплачено. Автоматическая оплата через СБП — в планах.
         </Banner>
         <View style={styles.modalActions}>
-          <Btn kind="success" onPress={confirmPaid} loading={busy}>
-            Я оплатил — подтвердить
-          </Btn>
-          <Btn kind="ghost" onPress={() => setPayModal(false)}>
-            Позже
-          </Btn>
+          <Btn onPress={() => setPayModal(false)}>Понятно</Btn>
         </View>
       </Modal>
     </Screen>
