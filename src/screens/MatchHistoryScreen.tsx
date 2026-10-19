@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
@@ -10,13 +11,14 @@ import {
   Card,
   EmptyState,
   GameStatusBadge,
+  Icon,
   LevelBadge,
   Screen,
   Skeleton,
   contentStyle,
   formatDate,
 } from '../components/ui';
-import { colors, fontMono, spacing } from '../theme';
+import { colors, fontDisplay, fontMono, spacing } from '../theme';
 
 /** История матчей: завершённые игры с результатом и счётом партий. */
 export default function MatchHistoryScreen() {
@@ -66,36 +68,49 @@ export default function MatchHistoryScreen() {
                 <Pressable key={g.id} onPress={() => nav.navigate('GameDetails', { id: g.id })}>
                   <Card style={{ gap: spacing.sm }}>
                     <View style={styles.rowBetween}>
-                      <Text style={styles.title}>{g.title}</Text>
+                      <Text style={styles.title} numberOfLines={2}>
+                        {g.title}
+                      </Text>
                       <GameStatusBadge status={g.status} />
                     </View>
-                    <Text style={styles.meta}>
+                    <Text style={styles.meta} numberOfLines={1}>
                       {formatDate(g.date_time)} · {g.location.name}
                     </Text>
 
                     {hasResult ? (
                       <View style={styles.scoreBox}>
                         <View style={styles.scoreRow}>
-                          <Text
-                            style={[
-                              styles.team,
-                              g.winner_team === 1 && { color: colors.success, fontWeight: '700' },
-                            ]}
-                          >
-                            Команда 1{g.winner_team === 1 ? ' 🏆' : ''}
-                          </Text>
-                          <Text style={styles.score}>
+                          <View style={styles.teamWrap}>
+                            <Text
+                              style={[
+                                styles.team,
+                                g.winner_team === 1 && { color: colors.success, fontWeight: '700' },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              Команда 1
+                            </Text>
+                            {g.winner_team === 1 ? (
+                              <Icon name="trophy-outline" size={15} color={colors.gold} />
+                            ) : null}
+                          </View>
+                          <Text style={styles.score} numberOfLines={1}>
                             {hasScore ? `${g.team_1_sets_won ?? 0} : ${g.team_2_sets_won ?? 0}` : '—'}
                           </Text>
-                          <Text
-                            style={[
-                              styles.team,
-                              { textAlign: 'right' },
-                              g.winner_team === 2 && { color: colors.success, fontWeight: '700' },
-                            ]}
-                          >
-                            {g.winner_team === 2 ? '🏆 ' : ''}Команда 2
-                          </Text>
+                          <View style={[styles.teamWrap, styles.teamWrapRight]}>
+                            {g.winner_team === 2 ? (
+                              <Icon name="trophy-outline" size={15} color={colors.gold} />
+                            ) : null}
+                            <Text
+                              style={[
+                                styles.team,
+                                g.winner_team === 2 && { color: colors.success, fontWeight: '700' },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              Команда 2
+                            </Text>
+                          </View>
                         </View>
                         {hasScore ? (
                           <Text style={styles.sets}>{sets.map((s) => `${s.team_1}:${s.team_2}`).join(' · ')}</Text>
@@ -121,16 +136,18 @@ export default function MatchHistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  back: { color: colors.accent, fontSize: 15, fontWeight: '600' },
-  h1: { color: colors.textMain, fontSize: 28, fontWeight: '700' },
-  sub: { color: colors.textSub, fontSize: 13, marginTop: 4 },
+  back: { color: colors.accent, fontSize: 14, fontWeight: '600' },
+  h1: { color: colors.textMain, fontSize: 25, fontWeight: '700', letterSpacing: -0.5, fontFamily: fontDisplay },
+  sub: { color: colors.textSub, fontSize: 12.5, marginTop: 4, lineHeight: 18 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  title: { color: colors.textMain, fontSize: 17, fontWeight: '700', flex: 1 },
-  meta: { color: colors.textSub, fontSize: 13 },
+  title: { color: colors.textMain, fontSize: 16.5, fontWeight: '700', flex: 1, minWidth: 0 },
+  meta: { color: colors.textSub, fontSize: 12.5 },
   muted: { color: colors.textSub, fontSize: 12 },
   scoreBox: { backgroundColor: colors.surfaceSoft, borderRadius: 12, padding: spacing.md, gap: 6 },
   scoreRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  team: { color: colors.textSub, fontSize: 14, flex: 1 },
-  score: { color: colors.gold, fontSize: 20, fontWeight: '700', fontFamily: fontMono },
+  teamWrap: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 5 },
+  teamWrapRight: { justifyContent: 'flex-end' },
+  team: { color: colors.textSub, fontSize: 13, flexShrink: 1 },
+  score: { color: colors.gold, fontSize: 20, fontWeight: '700', fontFamily: fontMono, flexShrink: 0 },
   sets: { color: colors.muted, fontSize: 12, fontFamily: fontMono, letterSpacing: 1 },
 });

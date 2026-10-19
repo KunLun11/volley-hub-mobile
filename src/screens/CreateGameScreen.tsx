@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
@@ -9,6 +10,7 @@ import {
   Btn,
   Card,
   GenderText,
+  Icon,
   LevelBadge,
   Screen,
   Skeleton,
@@ -18,7 +20,7 @@ import {
 } from '../components/ui';
 import { Field, Input, RadioPills, Select, TextArea } from '../components/form';
 import { useToast } from '../store';
-import { colors, fontMono, spacing } from '../theme';
+import { colors, fontDisplay, fontMono, spacing } from '../theme';
 
 /** В1. Создание игры -> POST /games/ */
 export default function CreateGameScreen() {
@@ -73,7 +75,7 @@ export default function CreateGameScreen() {
     };
     try {
       const g = await api.createGame(payload);
-      toast.push(statusDraft ? 'Черновик сохранён' : 'Игра опубликована 🎉', 'success');
+      toast.push(statusDraft ? 'Черновик сохранён' : 'Игра опубликована', 'success');
       if (statusDraft) nav.navigate('Organizer');
       else nav.replace('GameDetails', { id: g.id });
     } catch (e) {
@@ -101,12 +103,12 @@ export default function CreateGameScreen() {
           </Field>
 
           <View style={styles.grid2}>
-            <View style={{ flex: 1 }}>
+            <View style={styles.gridItemHalf}>
               <Field label="Дата" hint="ГГГГ-ММ-ДД">
                 <Input value={form.date} onChangeText={(t) => setForm({ ...form, date: t })} autoCapitalize="none" />
               </Field>
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.gridItemHalf}>
               <Field label="Время" hint="ЧЧ:ММ">
                 <Input value={form.time} onChangeText={(t) => setForm({ ...form, time: t })} autoCapitalize="none" />
               </Field>
@@ -131,8 +133,8 @@ export default function CreateGameScreen() {
           </Field>
 
           <View style={styles.grid3}>
-            <View style={{ flex: 1 }}>
-              <Field label="Лимит игроков">
+            <View style={styles.gridItem}>
+              <Field label="Игроков">
                 <Input
                   value={String(form.capacity)}
                   onChangeText={(t) => setForm({ ...form, capacity: Number(t.replace(/\D/g, '')) || 0 })}
@@ -140,7 +142,7 @@ export default function CreateGameScreen() {
                 />
               </Field>
             </View>
-            <View style={{ flex: 1 }}>
+            <View style={styles.gridItem}>
               <Field label="Цена, ₽">
                 <Input
                   value={String(form.price)}
@@ -149,8 +151,8 @@ export default function CreateGameScreen() {
                 />
               </Field>
             </View>
-            <View style={{ flex: 1 }}>
-              <Field label="Длит., мин">
+            <View style={styles.gridItem}>
+              <Field label="Мин">
                 <Input
                   value={String(form.duration_minutes)}
                   onChangeText={(t) => setForm({ ...form, duration_minutes: Number(t.replace(/\D/g, '')) || 0 })}
@@ -189,17 +191,22 @@ export default function CreateGameScreen() {
             <Text style={styles.label}>Так игру увидят игроки:</Text>
             <Card style={styles.preview}>
               <View style={styles.rowBetween}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.previewTitle}>{form.title || 'Название игры'}</Text>
-                  <Text style={styles.previewMeta}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.previewTitle} numberOfLines={2}>
+                    {form.title || 'Название игры'}
+                  </Text>
+                  <Text style={styles.previewMeta} numberOfLines={1}>
                     {formatDate(new Date(`${form.date}T${form.time}:00`).toISOString())} · {form.duration_minutes} мин
                   </Text>
                 </View>
                 <LevelBadge level={Number(form.skill_level)} />
               </View>
-              <Text style={styles.previewMeta} numberOfLines={1}>
-                📍 {selectedLoc ? `${selectedLoc.name}, ${selectedLoc.address || ''}` : 'Зал не выбран'}
-              </Text>
+              <View style={styles.metaRow}>
+                <Icon name="map-marker-outline" size={14} color={colors.meta} />
+                <Text style={styles.previewMeta} numberOfLines={1}>
+                  {selectedLoc ? `${selectedLoc.name}, ${selectedLoc.address || ''}` : 'Зал не выбран'}
+                </Text>
+              </View>
               <View style={styles.rowBetween}>
                 <Text style={styles.previewMeta}>
                   Свободно {form.capacity} из {form.capacity}
@@ -231,13 +238,16 @@ export default function CreateGameScreen() {
 }
 
 const styles = StyleSheet.create({
-  h1: { color: colors.textMain, fontSize: 26, fontWeight: '700' },
-  grid2: { flexDirection: 'row', gap: spacing.md },
-  grid3: { flexDirection: 'row', gap: spacing.md },
-  label: { color: colors.textSub, fontSize: 12, fontWeight: '500' },
+  h1: { color: colors.textMain, fontSize: 25, fontWeight: '700', letterSpacing: -0.5, fontFamily: fontDisplay },
+  grid2: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  grid3: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
+  gridItem: { flexGrow: 1, flexBasis: '28%', minWidth: 88 },
+  gridItemHalf: { flexGrow: 1, flexBasis: '45%', minWidth: 130 },
+  label: { color: colors.textSub, fontSize: 12, fontWeight: '600' },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, minWidth: 0 },
   preview: { gap: spacing.sm, padding: spacing.lg },
-  previewTitle: { color: colors.textMain, fontSize: 17, fontWeight: '600' },
-  previewMeta: { color: colors.textSub, fontSize: 13 },
+  previewTitle: { color: colors.textMain, fontSize: 16, fontWeight: '700' },
+  previewMeta: { color: colors.textSub, fontSize: 12.5, flexShrink: 1 },
   price: { color: colors.gold, fontSize: 16, fontWeight: '700', fontFamily: fontMono },
 });

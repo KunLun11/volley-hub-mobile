@@ -1,10 +1,13 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
+import { BlurView } from 'expo-blur';
+import { LinearGradient } from 'expo-linear-gradient';
 import { createBottomTabNavigator, type BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors } from '../theme';
+import { colors, gradients } from '../theme';
 import { AppHeader, Icon, Screen, type IconName } from '../components/ui';
 import { useAuth } from '../store';
 import GamesListScreen from '../screens/GamesListScreen';
@@ -113,6 +116,14 @@ function Dock({ state, navigation }: { state: BottomTabBarProps['state']; naviga
   return (
     <>
       <View style={[styles.bar, { height: barHeight, paddingBottom: insets.bottom }]}>
+        <BlurView
+          intensity={50}
+          tint="dark"
+          experimentalBlurMethod="dimezisBlurView"
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.barTint} pointerEvents="none" />
+        <View style={styles.barHairline} pointerEvents="none" />
         {items.map((it) => (
           <Pressable
             key={it.key}
@@ -122,8 +133,12 @@ function Dock({ state, navigation }: { state: BottomTabBarProps['state']; naviga
             accessibilityState={{ selected: it.active }}
             accessibilityLabel={it.label}
           >
-            <Icon name={it.icon} size={24} color={it.active ? colors.accent : colors.muted} />
-            <Text style={[styles.barLabel, it.active && styles.barLabelActive]}>{it.label}</Text>
+            <View style={[styles.barIconWrap, it.active && styles.barIconWrapActive]}>
+              <Icon name={it.icon} size={23} color={it.active ? colors.accent : colors.muted} />
+            </View>
+            <Text style={[styles.barLabel, it.active && styles.barLabelActive]} numberOfLines={1}>
+              {it.label}
+            </Text>
           </Pressable>
         ))}
       </View>
@@ -139,7 +154,14 @@ function Dock({ state, navigation }: { state: BottomTabBarProps['state']; naviga
           accessibilityRole="button"
           accessibilityLabel="Создать игру"
         >
-          <Icon name="plus" size={26} color={colors.accentInk} />
+          <LinearGradient
+            colors={gradients.accentBright}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.fabGradient}
+          >
+            <Icon name="plus" size={26} color={colors.accentInk} />
+          </LinearGradient>
         </Pressable>
       ) : null}
     </>
@@ -188,24 +210,43 @@ const styles = StyleSheet.create({
     bottom: 0,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    overflow: 'hidden',
     shadowColor: '#000',
-    shadowOpacity: 0.45,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: -6 },
-    elevation: 16,
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 18,
     zIndex: 90,
+  },
+  barTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(10,11,14,0.30)',
+  },
+  barHairline: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.13)',
   },
   barItem: {
     flex: 1,
+    minWidth: 0,
     height: BAR_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
+    gap: 2,
   },
-  barLabel: { color: colors.muted, fontSize: 10.5, fontWeight: '600' },
+  barIconWrap: {
+    width: 44,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  barIconWrapActive: { backgroundColor: 'rgba(59,130,246,0.14)' },
+  barLabel: { color: colors.muted, fontSize: 10.5, fontWeight: '600', maxWidth: '96%' },
   barLabelActive: { color: colors.accent },
   fab: {
     position: 'absolute',
@@ -213,14 +254,13 @@ const styles = StyleSheet.create({
     width: FAB_SIZE,
     height: FAB_SIZE,
     borderRadius: FAB_SIZE / 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.accent,
+    overflow: 'hidden',
     shadowColor: colors.accent,
-    shadowOpacity: 0.45,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 12,
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 14,
     zIndex: 91,
   },
+  fabGradient: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 });

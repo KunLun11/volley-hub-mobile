@@ -1,9 +1,10 @@
 import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, spacing } from '../theme';
+import { colors, radius, shadows, spacing } from '../theme';
 
 export interface ToastItem {
   id: number;
@@ -79,11 +80,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
     borderColor: colors.border2,
+    ...shadows.pop,
   },
-  text: { color: colors.textMain, fontSize: 14, flex: 1 },
+  text: { color: colors.textMain, fontSize: 13.5, flex: 1, lineHeight: 19 },
 });
 
 export const useToast = () => useContext(Ctx);

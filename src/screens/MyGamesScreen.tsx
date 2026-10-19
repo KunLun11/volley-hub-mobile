@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
@@ -11,7 +12,7 @@ import {
   ParticipantStatusBadge,
   Skeleton,
   Tabs,
-  contentStyle,
+  useTabContentStyle,
   formatMoney,
 } from '../components/ui';
 import { colors, fontMono, spacing } from '../theme';
@@ -23,6 +24,7 @@ type Tab = 'all' | 'upcoming' | 'past';
 export default function MyGamesScreen() {
   const nav = useNavigation<any>();
   const toast = useToast();
+  const contentStyle = useTabContentStyle();
   const [games, setGames] = useState<MyGame[] | null>(null);
   const [tab, setTab] = useState<Tab>('all');
   const [refreshing, setRefreshing] = useState(false);
@@ -51,8 +53,8 @@ export default function MyGamesScreen() {
 
   const rateGame = (gameId: number) => {
     Alert.alert('Уровень игры', 'Совпал ли уровень игры с ожиданиями?', [
-      { text: '👍 Совпало', onPress: () => submitReview(gameId, true) },
-      { text: '👎 Не совпало', onPress: () => submitReview(gameId, false) },
+      { text: 'Совпало', onPress: () => submitReview(gameId, true) },
+      { text: 'Не совпало', onPress: () => submitReview(gameId, false) },
       { text: 'Отмена', style: 'cancel' },
     ]);
   };
@@ -111,11 +113,13 @@ export default function MyGamesScreen() {
                 <GameCard game={m.game} onPress={() => nav.navigate('GameDetails', { id: m.game.id })} />
                 <View style={styles.metaRow}>
                   <ParticipantStatusBadge status={m.participant_status} />
-                  <Text style={styles.metaText}>{formatMoney(m.game.price)}</Text>
+                  <Text style={styles.metaText} numberOfLines={1}>
+                    {formatMoney(m.game.price)}
+                  </Text>
                 </View>
                 {past && m.participant_status !== 4 && m.participant_status !== 5 ? (
                   m.has_review ? (
-                    <Text style={styles.reviewed}>✓ Уровень оценён</Text>
+                    <Text style={styles.reviewed}>Уровень оценён</Text>
                   ) : (
                     <Btn kind="secondary" small onPress={() => rateGame(m.game.id)}>
                       Оценить уровень игры →
@@ -132,8 +136,8 @@ export default function MyGamesScreen() {
 }
 
 const styles = StyleSheet.create({
-  h1: { color: colors.textMain, fontSize: 28, fontWeight: '700' },
-  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  metaText: { color: colors.gold, fontWeight: '700', fontFamily: fontMono },
+  h1: { color: colors.textMain, fontSize: 26, fontWeight: '700', letterSpacing: -0.5 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
+  metaText: { color: colors.gold, fontWeight: '700', fontFamily: fontMono, flexShrink: 0 },
   reviewed: { color: colors.success, fontSize: 13, fontWeight: '600' },
 });

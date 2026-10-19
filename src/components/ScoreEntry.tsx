@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
+import { Text } from './Text';
 
 import { api } from '../api/client';
 import type { SetScore } from '../types';
 import { Btn, Card } from './ui';
 import { useToast } from '../store';
-import { colors, fontMono, radius, spacing } from '../theme';
+import { colors, fontDisplay, fontMono, radius, spacing } from '../theme';
 
 interface Props {
   gameId: number;
@@ -125,7 +126,7 @@ export default function ScoreEntry({ gameId, setScores, canEdit, hint, onSaved }
               keyboardType="number-pad"
               value={team1}
               onChangeText={setTeam1}
-              placeholder="Команда 1"
+              placeholder="0"
               placeholderTextColor={colors.textMuted}
               accessibilityLabel="Счёт команды 1"
             />
@@ -135,7 +136,7 @@ export default function ScoreEntry({ gameId, setScores, canEdit, hint, onSaved }
               keyboardType="number-pad"
               value={team2}
               onChangeText={setTeam2}
-              placeholder="Команда 2"
+              placeholder="0"
               placeholderTextColor={colors.textMuted}
               accessibilityLabel="Счёт команды 2"
             />
@@ -157,9 +158,9 @@ export default function ScoreEntry({ gameId, setScores, canEdit, hint, onSaved }
 }
 
 const styles = StyleSheet.create({
-  h3: { color: colors.textMain, fontSize: 18, fontWeight: '600' },
-  hint: { color: colors.textSub, fontSize: 13 },
-  muted: { color: colors.textSub, fontSize: 14 },
+  h3: { color: colors.textMain, fontSize: 17, fontWeight: '700', fontFamily: fontDisplay },
+  hint: { color: colors.textSub, fontSize: 12.5, lineHeight: 18 },
+  muted: { color: colors.textSub, fontSize: 13.5 },
   setRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -169,22 +170,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceSoft,
     flexWrap: 'wrap',
   },
-  setLabel: { color: colors.textMuted, fontSize: 13, minWidth: 64 },
-  setScore: { color: colors.gold, fontSize: 18, fontWeight: '700', fontFamily: fontMono },
-  setActions: { flexDirection: 'row', gap: spacing.xs, marginLeft: 'auto' },
-  label: { color: colors.textMain, fontSize: 14, fontWeight: '700' },
+  setLabel: { color: colors.textMuted, fontSize: 12, minWidth: 58, flexShrink: 0 },
+  setScore: { color: colors.gold, fontSize: 18, fontWeight: '700', fontFamily: fontMono, flexShrink: 0 },
+  setActions: { flexDirection: 'row', gap: spacing.xs, marginLeft: 'auto', flexShrink: 0 },
+  label: { color: colors.textMain, fontSize: 13.5, fontWeight: '700' },
   inputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   input: {
     flex: 1,
+    minWidth: 0,
     backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border2,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     color: colors.textMain,
     fontSize: 16,
     fontFamily: fontMono,
+    textAlign: 'center',
   },
   colon: { color: colors.textMuted, fontSize: 18 },
   actionRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },

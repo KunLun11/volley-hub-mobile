@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import * as Clipboard from 'expo-clipboard';
 
@@ -26,7 +27,7 @@ import {
 } from '../components/ui';
 import { formatMs, useAuth, useCountdown, useToast } from '../store';
 import ScoreEntry from '../components/ScoreEntry';
-import { colors, fontMono, radius, spacing } from '../theme';
+import { colors, fontDisplay, fontMono, radius, spacing } from '../theme';
 
 interface ParticipantLite {
   id: number;
@@ -133,7 +134,7 @@ export default function GameDetailsScreen() {
     setMyStatus('registered');
     try {
       await api.registerOnGame(gid);
-      toast.push('Вы записаны на игру! 🎉', 'success');
+      toast.push('Вы записаны на игру', 'success');
       setPayModal(true);
     } catch (e) {
       setMyStatus('none');
@@ -166,7 +167,7 @@ export default function GameDetailsScreen() {
       await api.confirmPayment(gid);
       setMyStatus('confirmed');
       setPayModal(false);
-      toast.push('Статус обновлён: оплачено ✅', 'success');
+      toast.push('Статус обновлён: оплачено', 'success');
     } catch (e) {
       toast.push(e instanceof Error ? e.message : 'Ошибка', 'error');
     } finally {
@@ -179,7 +180,7 @@ export default function GameDetailsScreen() {
     setBusy(true);
     try {
       await api.attend(gid);
-      toast.push('Отмечено: вы присутствовали 🏐', 'success');
+      toast.push('Отмечено: вы присутствовали', 'success');
     } catch (e) {
       toast.push(e instanceof Error ? e.message : 'Не удалось отметиться', 'error');
     } finally {
@@ -219,30 +220,44 @@ export default function GameDetailsScreen() {
                 <GameStatusBadge status={detail.status} />
               </View>
               <Text style={styles.heroTitle}>{detail.title}</Text>
-              <Text style={styles.heroMeta}>🗓 {formatDate(detail.date_time)}</Text>
-              <Text style={styles.heroMeta}>⏱ {detail.duration_minutes} мин</Text>
-              <Text style={styles.heroMeta}>
-                📍 {detail.location.name}, {detail.location.address}
-              </Text>
+              <View style={styles.heroMetaRow}>
+                <Icon name="calendar-blank-outline" size={15} color={colors.meta} />
+                <Text style={styles.heroMeta} numberOfLines={1}>
+                  {formatDate(detail.date_time)}
+                </Text>
+              </View>
+              <View style={styles.heroMetaRow}>
+                <Icon name="clock-outline" size={15} color={colors.meta} />
+                <Text style={styles.heroMeta} numberOfLines={1}>
+                  {detail.duration_minutes} мин
+                </Text>
+              </View>
+              <View style={styles.heroMetaRow}>
+                <Icon name="map-marker-outline" size={15} color={colors.meta} />
+                <Text style={styles.heroMeta} numberOfLines={2}>
+                  {detail.location.name}
+                  {detail.location.address ? `, ${detail.location.address}` : ''}
+                </Text>
+              </View>
             </Card>
 
             {ratingStats && ratingStats.spread > 300 && isOpen ? (
-              <Banner kind="warning" icon="⚠️">
+              <Banner kind="warning" icon="alert-outline">
                 Большой разброс рейтинга участников ({ratingStats.spread} ELO). Игра может получиться неровной.
               </Banner>
             ) : null}
             {detail.status === 2 ? (
-              <Banner kind="info" icon="🔒">
+              <Banner kind="info" icon="lock-outline">
                 Запись закрыта.
               </Banner>
             ) : null}
             {detail.status === 4 ? (
-              <Banner kind="success" icon="✅">
+              <Banner kind="success" icon="check-circle-outline">
                 Игра завершена.
               </Banner>
             ) : null}
             {detail.status === 5 ? (
-              <Banner kind="error" icon="✕">
+              <Banner kind="error" icon="close-circle-outline">
                 Игра отменена.
               </Banner>
             ) : null}
@@ -252,28 +267,37 @@ export default function GameDetailsScreen() {
               <Card style={{ gap: spacing.sm }}>
                 <Text style={styles.h3}>Итог матча</Text>
                 <View style={styles.resultRow}>
-                  <Text
-                    style={[
-                      styles.resultTeam,
-                      detail.winner_team === 1 && styles.resultWinner,
-                    ]}
-                  >
-                    Команда 1
-                    {detail.winner_team === 1 ? ' 🏆' : ''}
-                  </Text>
-                  <Text style={styles.resultScore}>
+                  <View style={[styles.resultTeamWrap, detail.winner_team === 1 && styles.resultWinnerWrap]}>
+                    <Text
+                      style={[styles.resultTeam, detail.winner_team === 1 && styles.resultWinner]}
+                      numberOfLines={1}
+                    >
+                      Команда 1
+                    </Text>
+                    {detail.winner_team === 1 ? (
+                      <Icon name="trophy-outline" size={16} color={colors.gold} />
+                    ) : null}
+                  </View>
+                  <Text style={styles.resultScore} numberOfLines={1}>
                     {detail.team_1_sets_won ?? 0} : {detail.team_2_sets_won ?? 0}
                   </Text>
-                  <Text
+                  <View
                     style={[
-                      styles.resultTeam,
-                      { textAlign: 'right' },
-                      detail.winner_team === 2 && styles.resultWinner,
+                      styles.resultTeamWrap,
+                      styles.resultTeamRight,
+                      detail.winner_team === 2 && styles.resultWinnerWrap,
                     ]}
                   >
-                    {detail.winner_team === 2 ? '🏆 ' : ''}
-                    Команда 2
-                  </Text>
+                    {detail.winner_team === 2 ? (
+                      <Icon name="trophy-outline" size={16} color={colors.gold} />
+                    ) : null}
+                    <Text
+                      style={[styles.resultTeam, detail.winner_team === 2 && styles.resultWinner]}
+                      numberOfLines={1}
+                    >
+                      Команда 2
+                    </Text>
+                  </View>
                 </View>
                 {hasScore ? (
                   <Text style={styles.setsLine}>
@@ -331,7 +355,7 @@ export default function GameDetailsScreen() {
                       </Btn>
                       {deadlineLeft !== null && deadlineLeft > 0 ? (
                         <Text style={styles.deadline}>
-                          ⏳ отмена доступна ещё {formatMs(deadlineLeft)}
+                          Отмена доступна ещё {formatMs(deadlineLeft)}
                         </Text>
                       ) : (
                         <Text style={styles.muted}>Отмена недоступна (менее 24ч до игры)</Text>
@@ -344,7 +368,8 @@ export default function GameDetailsScreen() {
               {myStatus === 'confirmed' ? (
                 <>
                   <View style={styles.paidRow}>
-                    <Text style={styles.paidText}>✓ Оплачено</Text>
+                    <Icon name="check-circle-outline" size={16} color={colors.success} />
+                    <Text style={styles.paidText}>Оплачено</Text>
                   </View>
                   {detail.status === 3 ? (
                     <Btn kind="secondary" onPress={doAttend} block>
@@ -366,7 +391,7 @@ export default function GameDetailsScreen() {
             {/* Участники */}
             <Card style={{ gap: spacing.md }}>
               <View style={styles.rowBetween}>
-                <Text style={styles.h3}>
+                <Text style={[styles.h3, { flexShrink: 1 }]} numberOfLines={1}>
                   Записались ({participants.length}/{short?.capacity ?? detail.capacity})
                 </Text>
                 {ratingStats ? (
@@ -402,56 +427,66 @@ export default function GameDetailsScreen() {
                         const row = (
                           <>
                             <Avatar name={p.player_name} size={36} />
-                            <View style={{ flex: 1 }}>
-                              <Text style={styles.pName}>{p.player_name}</Text>
-                              <Text style={styles.pSub}>ELO {p.player_elo}</Text>
-                            </View>
-                            <View
-                              style={[
-                                styles.pBadge,
-                                p.status === 2
-                                  ? { backgroundColor: colors.successBg }
-                                  : { backgroundColor: colors.infoBg },
-                              ]}
-                            >
-                              <Text
-                                style={{
-                                  color: p.status === 2 ? colors.success : colors.primary,
-                                  fontSize: 12,
-                                  fontWeight: '600',
-                                }}
-                              >
-                                {p.status === 2 ? 'Оплачено' : 'Записан'}
+                            <View style={styles.pInfo}>
+                              <Text style={styles.pName} numberOfLines={1}>
+                                {p.player_name}
                               </Text>
-                            </View>
-                            {detail.responsible?.id === p.player_id ? (
-                              <View style={[styles.pBadge, { backgroundColor: colors.infoBg }]}>
-                                <Text style={{ color: colors.primary, fontSize: 12, fontWeight: '600' }}>
-                                  Ответственный за счёт
-                                </Text>
-                              </View>
-                            ) : null}
-                            {hasResult && p.result ? (
-                              <View
-                                style={[
-                                  styles.pBadge,
-                                  p.result === 1
-                                    ? { backgroundColor: colors.successBg }
-                                    : { backgroundColor: colors.dangerBg },
-                                ]}
-                              >
-                                <Text
-                                  style={{
-                                    color: p.result === 1 ? colors.success : colors.danger,
-                                    fontSize: 12,
-                                    fontWeight: '600',
-                                  }}
+                              <Text style={styles.pSub}>ELO {p.player_elo}</Text>
+                              <View style={styles.pBadges}>
+                                <View
+                                  style={[
+                                    styles.pBadge,
+                                    p.status === 2
+                                      ? { backgroundColor: colors.successBg }
+                                      : { backgroundColor: colors.infoBg },
+                                  ]}
                                 >
-                                  {p.result === 1 ? 'Победа' : 'Поражение'}
-                                  {delta != null ? ` ${delta > 0 ? '+' : ''}${delta}` : ''}
-                                </Text>
+                                  <Text
+                                    style={{
+                                      color: p.status === 2 ? colors.success : colors.primary,
+                                      fontSize: 11,
+                                      fontWeight: '600',
+                                    }}
+                                    numberOfLines={1}
+                                  >
+                                    {p.status === 2 ? 'Оплачено' : 'Записан'}
+                                  </Text>
+                                </View>
+                                {detail.responsible?.id === p.player_id ? (
+                                  <View style={[styles.pBadge, { backgroundColor: colors.infoBg }]}>
+                                    <Text
+                                      style={{ color: colors.primary, fontSize: 11, fontWeight: '600' }}
+                                      numberOfLines={1}
+                                    >
+                                      Счёт
+                                    </Text>
+                                  </View>
+                                ) : null}
+                                {hasResult && p.result ? (
+                                  <View
+                                    style={[
+                                      styles.pBadge,
+                                      p.result === 1
+                                        ? { backgroundColor: colors.successBg }
+                                        : { backgroundColor: colors.dangerBg },
+                                    ]}
+                                  >
+                                    <Text
+                                      style={{
+                                        color: p.result === 1 ? colors.success : colors.danger,
+                                        fontSize: 11,
+                                        fontWeight: '600',
+                                      }}
+                                      numberOfLines={1}
+                                    >
+                                      {p.result === 1 ? 'Победа' : 'Поражение'}
+                                      {delta != null ? ` ${delta > 0 ? '+' : ''}${delta}` : ''}
+                                    </Text>
+                                  </View>
+                                ) : null}
                               </View>
-                            ) : null}
+                            </View>
+                            {uid ? <Icon name="chevron-right" size={18} color={colors.muted} /> : null}
                           </>
                         );
                         return uid ? (
@@ -498,10 +533,12 @@ export default function GameDetailsScreen() {
                 const inner = (
                   <>
                     <Avatar name={organizerName} size={52} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.pName}>{organizerName}</Text>
-                      <Text style={styles.pSub}>
-                        {detail.organizer.total_games} игр проведено · ELO {detail.organizer.elo_rating}
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={styles.pName} numberOfLines={1}>
+                        {organizerName}
+                      </Text>
+                      <Text style={styles.pSub} numberOfLines={1}>
+                        {detail.organizer.total_games} игр · ELO {detail.organizer.elo_rating}
                       </Text>
                     </View>
                     {orgUserId ? <Icon name="chevron-right" size={22} color={colors.muted} /> : null}
@@ -528,7 +565,7 @@ export default function GameDetailsScreen() {
 
       {/* Модалка «мест нет» */}
       <Modal visible={fullModal} onClose={() => setFullModal(false)}>
-        <Text style={styles.modalTitle}>Свободных мест нет 😞</Text>
+        <Text style={styles.modalTitle}>Свободных мест нет</Text>
         <Text style={styles.modalText}>
           Добавить вас в лист ожидания? Как только кто-то отменит запись — место перейдёт вам.
         </Text>
@@ -536,7 +573,7 @@ export default function GameDetailsScreen() {
           <Btn
             onPress={() => {
               setFullModal(false);
-              toast.push('Вы в листе ожидания ⏳', 'success');
+              toast.push('Вы в листе ожидания', 'success');
             }}
           >
             В лист ожидания
@@ -556,10 +593,10 @@ export default function GameDetailsScreen() {
         <View style={styles.copyRow}>
           <Text style={styles.phone}>+7 900 123-45-67</Text>
           <Btn kind="secondary" small onPress={copyPhone}>
-            {copied ? '✓ Скопировано' : 'Скопировать'}
+            {copied ? 'Скопировано' : 'Скопировать'}
           </Btn>
         </View>
-        <Banner kind="warning" icon="💳">
+        <Banner kind="warning" icon="credit-card-outline">
           Статус сейчас: не оплачено. Автоматическая оплата через СБП — в планах.
         </Banner>
         <View style={styles.modalActions}>
@@ -576,18 +613,32 @@ export default function GameDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
-  back: { color: colors.primary, fontSize: 15, fontWeight: '600' },
+  back: { color: colors.accent, fontSize: 14, fontWeight: '600' },
   hero: { gap: spacing.xs },
   badgeRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', marginBottom: spacing.sm },
-  heroTitle: { color: colors.textMain, fontSize: 24, fontWeight: '700' },
-  heroMeta: { color: colors.textSub, fontSize: 14, marginTop: 2 },
-  muted: { color: colors.textSub, fontSize: 14 },
-  deadline: { color: colors.warning, fontSize: 13 },
-  h3: { color: colors.textMain, fontSize: 18, fontWeight: '600' },
+  heroTitle: {
+    color: colors.textMain,
+    fontSize: 23,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+    fontFamily: fontDisplay,
+    lineHeight: 29,
+  },
+  heroMetaRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 3, minWidth: 0 },
+  heroMeta: { color: colors.textSub, fontSize: 13.5, flexShrink: 1, lineHeight: 19 },
+  muted: { color: colors.textSub, fontSize: 13.5, lineHeight: 19 },
+  deadline: { color: colors.warning, fontSize: 13, fontFamily: fontMono },
+  h3: { color: colors.textMain, fontSize: 17, fontWeight: '700', fontFamily: fontDisplay },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  eloChip: { backgroundColor: colors.infoBg, borderRadius: radius.full, paddingHorizontal: 8, paddingVertical: 2 },
-  eloChipText: { color: colors.primary, fontSize: 12, fontWeight: '700' },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, minWidth: 0 },
+  eloChip: {
+    backgroundColor: colors.infoBg,
+    borderRadius: radius.full,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    flexShrink: 0,
+  },
+  eloChipText: { color: colors.primary, fontSize: 11.5, fontWeight: '700' },
   participant: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -595,38 +646,55 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.md,
     backgroundColor: colors.surfaceSoft,
+    minWidth: 0,
   },
   participantLink: { borderWidth: 1, borderColor: colors.border },
   pressed: { opacity: 0.85 },
+  pInfo: { flex: 1, minWidth: 0, gap: 2 },
+  pBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 4 },
   pName: { color: colors.textMain, fontSize: 14, fontWeight: '600' },
-  pSub: { color: colors.textSub, fontSize: 12 },
-  pBadge: { borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 },
+  pSub: { color: colors.textSub, fontSize: 11.5, fontFamily: fontMono },
+  pBadge: { borderRadius: radius.full, paddingHorizontal: 9, paddingVertical: 2, maxWidth: '100%' },
   teamHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: spacing.sm },
   teamTitle: { color: colors.textSub, fontSize: 12, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' },
   winBadge: { backgroundColor: colors.successBg, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 2 },
   winBadgeText: { color: colors.success, fontSize: 11, fontWeight: '700' },
   resultRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  resultTeam: { color: colors.textSub, fontSize: 14, flex: 1 },
+  resultTeamWrap: { flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 6 },
+  resultTeamRight: { justifyContent: 'flex-end' },
+  resultWinnerWrap: {},
+  resultTeam: { color: colors.textSub, fontSize: 13, flexShrink: 1 },
   resultWinner: { color: colors.success, fontWeight: '700' },
-  resultScore: { color: colors.gold, fontSize: 24, fontWeight: '700', fontFamily: fontMono },
-  setsLine: { color: colors.textSub, fontSize: 12, letterSpacing: 1, fontFamily: fontMono },
-  paidRow: { backgroundColor: colors.successBg, borderRadius: radius.md, padding: spacing.md, alignItems: 'center' },
+  resultScore: { color: colors.gold, fontSize: 23, fontWeight: '700', fontFamily: fontMono, flexShrink: 0 },
+  setsLine: { color: colors.textSub, fontSize: 12, letterSpacing: 0.5, fontFamily: fontMono },
+  paidRow: {
+    backgroundColor: colors.successBg,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
   paidText: { color: colors.success, fontWeight: '700', fontSize: 15 },
-  body: { color: colors.textSub, fontSize: 14, lineHeight: 20 },
-  modalTitle: { color: colors.textMain, fontSize: 18, fontWeight: '700' },
-  modalText: { color: colors.textSub, fontSize: 14, marginTop: 4 },
+  body: { color: colors.textSub, fontSize: 13.5, lineHeight: 20 },
+  modalTitle: { color: colors.textMain, fontSize: 18, fontWeight: '700', fontFamily: fontDisplay },
+  modalText: { color: colors.textSub, fontSize: 13.5, marginTop: 4, lineHeight: 19 },
   modalActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg, flexWrap: 'wrap' },
   copyRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, marginTop: spacing.md, flexWrap: 'wrap' },
   phone: {
     color: colors.textMain,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 0.5,
+    letterSpacing: 0.3,
     paddingVertical: 10,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border2,
     borderRadius: radius.md,
+    flexShrink: 1,
+    textAlign: 'center',
+    fontFamily: fontMono,
   },
 });

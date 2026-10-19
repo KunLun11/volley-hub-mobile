@@ -4,13 +4,13 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   type TextInputProps,
   View,
 } from 'react-native';
+import { Text } from './Text';
 
-import { colors, radius, spacing } from '../theme';
+import { colors, fontFor, radius, spacing } from '../theme';
 
 export function Field({
   label,
@@ -161,17 +161,18 @@ export function CheckboxRow({
 
 const styles = StyleSheet.create({
   field: { gap: 6 },
-  label: { color: colors.textSub, fontSize: 12, fontWeight: '500' },
+  label: { color: colors.textSub, fontSize: 12, fontWeight: '600', letterSpacing: 0.2 },
   input: {
     minHeight: 48,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border2,
     borderRadius: radius.md,
     color: colors.textMain,
     fontSize: 16,
+    fontFamily: fontFor('body', '400'),
   },
   inputInvalid: { borderColor: colors.danger },
   textarea: { minHeight: 96, paddingTop: 12 },
@@ -183,12 +184,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border2,
     borderRadius: radius.md,
   },
-  selectText: { color: colors.textMain, fontSize: 16, flex: 1 },
+  selectText: { color: colors.textMain, fontSize: 16, flex: 1, fontFamily: fontFor('body', '400') },
   placeholder: { color: colors.textMuted },
   chevron: { color: colors.textSub, fontSize: 14, marginLeft: 8 },
   sheetOverlay: {
@@ -198,11 +199,11 @@ const styles = StyleSheet.create({
   },
   sheet: {
     maxHeight: '70%',
-    backgroundColor: colors.bgScreen,
+    backgroundColor: colors.surface2,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border2,
     paddingVertical: spacing.sm,
   },
   optRow: {
@@ -218,26 +219,26 @@ const styles = StyleSheet.create({
   pillGroup: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   pill: {
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 14,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  pillActive: { borderColor: colors.primary, backgroundColor: colors.infoBg },
-  pillText: { color: colors.textSub, fontSize: 14, fontWeight: '500' },
-  pillTextActive: { color: colors.primary, fontWeight: '700' },
-  checkboxRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  pillActive: { borderColor: 'rgba(59,130,246,0.55)', backgroundColor: colors.infoBg },
+  pillText: { color: colors.textSub, fontSize: 13.5, fontWeight: '500' },
+  pillTextActive: { color: colors.accent, fontWeight: '700' },
+  checkboxRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexShrink: 1 },
   checkbox: {
     width: 20,
     height: 20,
-    borderRadius: radius.sm,
+    borderRadius: radius.xs,
     borderWidth: 1,
     borderColor: colors.borderHover,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxOn: { backgroundColor: colors.primary, borderColor: colors.primary },
-  checkboxMark: { color: colors.textInverse, fontSize: 13, fontWeight: '900' },
-  checkboxLabel: { color: colors.textSub, fontSize: 14 },
+  checkboxOn: { backgroundColor: colors.accent, borderColor: colors.accent },
+  checkboxMark: { color: colors.accentInk, fontSize: 13, fontWeight: '900' },
+  checkboxLabel: { color: colors.textSub, fontSize: 14, flexShrink: 1 },
 });

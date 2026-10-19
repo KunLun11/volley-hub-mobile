@@ -1,18 +1,30 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
 import { SKILL_LEVELS, type GameList } from '../types';
-import { Btn, Card, EmptyState, GameCard, Icon, Modal, Skeleton, contentStyle } from '../components/ui';
+import {
+  Btn,
+  Card,
+  EmptyState,
+  GameCard,
+  Icon,
+  Modal,
+  Skeleton,
+  levelIcon,
+  useTabContentStyle,
+} from '../components/ui';
 import { CheckboxRow, Field, Input } from '../components/form';
 import { useToast } from '../store';
-import { colors, fontMono, radius, spacing } from '../theme';
+import { colors, fontDisplay, fontMono, radius, spacing } from '../theme';
 
 /** Б1. Список открытых игр: поиск + поп-апы «Даты» и «Уровень», фильтрация клиентская. */
 export default function GamesListScreen() {
   const nav = useNavigation<any>();
   const toast = useToast();
+  const contentStyle = useTabContentStyle();
   const [games, setGames] = useState<GameList[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -237,8 +249,9 @@ export default function GamesListScreen() {
             const on = levels.includes(lvl);
             return (
               <Pressable key={v} onPress={() => toggleLevel(lvl)} style={[styles.pill, on && styles.pillOn]}>
-                <Text style={[styles.pillText, on && styles.pillTextOn]}>
-                  {lvl} · {l}
+                <Icon name={levelIcon(lvl)} size={13} color={on ? colors.accent : colors.meta} />
+                <Text style={[styles.pillText, on && styles.pillTextOn]} numberOfLines={1}>
+                  {l}
                 </Text>
               </Pressable>
             );
@@ -269,8 +282,8 @@ export default function GamesListScreen() {
 }
 
 const styles = StyleSheet.create({
-  h1: { color: colors.textMain, fontSize: 28, fontWeight: '700' },
-  sub: { color: colors.textSub, fontSize: 14, marginTop: 4 },
+  h1: { color: colors.textMain, fontSize: 26, fontWeight: '700', letterSpacing: -0.5, fontFamily: fontDisplay },
+  sub: { color: colors.textSub, fontSize: 13.5, marginTop: 4, lineHeight: 19 },
 
   /* --- Виджет фильтров --- */
   widget: { padding: 0, overflow: 'hidden' },
@@ -310,11 +323,11 @@ const styles = StyleSheet.create({
   slotTxt: { flex: 1, minWidth: 0 },
   slotLabel: {
     color: colors.meta,
-    fontSize: 10.5,
+    fontSize: 10,
     letterSpacing: 0.8,
     textTransform: 'uppercase',
   },
-  slotValue: { color: colors.fg, fontSize: 14, fontWeight: '600', marginTop: 2 },
+  slotValue: { color: colors.fg, fontSize: 13, fontWeight: '600', marginTop: 2, fontFamily: fontMono },
   slotValueOn: { color: colors.accent },
 
   /* --- Строка результата --- */
@@ -323,11 +336,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
-    flexWrap: 'wrap',
   },
-  resultLine: { color: colors.muted, fontSize: 13 },
+  resultLine: { color: colors.muted, fontSize: 13, flexShrink: 1 },
   resultNum: { color: colors.fg, fontFamily: fontMono },
-  reset: { color: colors.accent, fontSize: 13, fontWeight: '600' },
+  reset: { color: colors.accent, fontSize: 13, fontWeight: '600', flexShrink: 0 },
 
   /* --- Поп-апы --- */
   mTitle: { color: colors.fg, fontSize: 18, fontWeight: '700' },
@@ -337,13 +349,17 @@ const styles = StyleSheet.create({
   pillGroup: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.lg },
   pill: {
     paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    maxWidth: '100%',
   },
-  pillOn: { borderColor: colors.accent, backgroundColor: colors.infoBg },
-  pillText: { color: colors.textSub, fontSize: 13.5, fontWeight: '500' },
+  pillOn: { borderColor: 'rgba(59,130,246,0.55)', backgroundColor: colors.infoBg },
+  pillText: { color: colors.textSub, fontSize: 13, fontWeight: '500', flexShrink: 1 },
   pillTextOn: { color: colors.accent, fontWeight: '700' },
 });

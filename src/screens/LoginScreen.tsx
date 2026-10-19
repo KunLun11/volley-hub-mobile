@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
 import { AuthLayout } from '../components/AuthLayout';
-import { Banner, Btn, Modal } from '../components/ui';
+import { Banner, Btn, Icon, Modal } from '../components/ui';
 import { CheckboxRow, Field, Input } from '../components/form';
 import { useAuth, useToast } from '../store';
 import { colors } from '../theme';
@@ -45,7 +46,7 @@ export default function LoginScreen() {
   return (
     <AuthLayout title="С возвращением" subtitle="Войдите, чтобы записаться на игру">
       {error ? (
-        <Banner kind="error" icon="⚠️">
+        <Banner kind="error" icon="alert-outline">
           {error}
         </Banner>
       ) : null}
@@ -74,7 +75,7 @@ export default function LoginScreen() {
               style={{ paddingRight: 52 }}
             />
             <Pressable style={styles.eye} onPress={() => setShowPass((s) => !s)}>
-              <Text style={styles.eyeText}>{showPass ? '🙈' : '👁️'}</Text>
+              <Icon name={showPass ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.muted} />
             </Pressable>
           </View>
         </Field>
@@ -103,7 +104,9 @@ export default function LoginScreen() {
       </View>
 
       <Modal visible={disableModal} onClose={() => setDisableModal(false)}>
-        <Text style={styles.modalIcon}>📭</Text>
+        <View style={{ alignItems: 'center', marginBottom: 4 }}>
+          <Icon name="email-outline" size={38} color={colors.accent} />
+        </View>
         <Text style={styles.modalTitle}>Аккаунт не подтверждён</Text>
         <Text style={styles.modalText}>
           Проверьте почту — мы отправили код подтверждения. Без активации вход невозможен.
@@ -129,12 +132,10 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   form: { gap: 16 },
   eye: { position: 'absolute', right: 6, top: 4, padding: 10 },
-  eyeText: { fontSize: 18 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
   link: { color: colors.accent, fontWeight: '600' },
   footer: { alignItems: 'center' },
   footerText: { color: colors.textSub, fontSize: 15 },
-  modalIcon: { fontSize: 44, textAlign: 'center' },
   modalTitle: { color: colors.textMain, fontSize: 18, fontWeight: '700', textAlign: 'center' },
   modalText: { color: colors.textSub, textAlign: 'center', marginTop: 8 },
   modalActions: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 20 },

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
@@ -10,6 +11,7 @@ import {
   Card,
   EmptyState,
   GameStatusBadge,
+  Icon,
   LevelBadge,
   Screen,
   Skeleton,
@@ -19,7 +21,7 @@ import {
   formatMoney,
 } from '../components/ui';
 import { useToast } from '../store';
-import { colors, spacing } from '../theme';
+import { colors, fontDisplay, fontMono, spacing } from '../theme';
 
 /** В2. Кабинет организатора: мои игры + статусы + действия */
 export default function OrganizerCabinetScreen() {
@@ -96,14 +98,23 @@ export default function OrganizerCabinetScreen() {
             {filtered.map((g) => (
               <Card key={g.id} style={{ gap: spacing.md }}>
                 <Pressable onPress={() => nav.navigate('ManageGame', { id: g.id })} style={{ gap: 6 }}>
-                  <Text style={styles.title}>{g.title}</Text>
-                  <Text style={styles.meta}>{formatDate(g.date_time)}</Text>
-                  <Text style={styles.meta} numberOfLines={1}>
-                    📍 {g.location.name}
+                  <Text style={styles.title} numberOfLines={2}>
+                    {g.title}
                   </Text>
+                  <Text style={styles.meta} numberOfLines={1}>
+                    {formatDate(g.date_time)}
+                  </Text>
+                  <View style={styles.metaRow}>
+                    <Icon name="map-marker-outline" size={14} color={colors.meta} />
+                    <Text style={styles.meta} numberOfLines={1}>
+                      {g.location.name}
+                    </Text>
+                  </View>
                   <View style={styles.rowBetween}>
-                    <LevelBadge level={g.skill_level} />
-                    <Text style={styles.slots}>
+                    <View style={{ flexShrink: 1, minWidth: 0 }}>
+                      <LevelBadge level={g.skill_level} />
+                    </View>
+                    <Text style={styles.slots} numberOfLines={1}>
                       {g.booked_count}/{g.capacity} · {formatMoney(g.price)}
                     </Text>
                   </View>
@@ -158,10 +169,11 @@ export default function OrganizerCabinetScreen() {
 
 const styles = StyleSheet.create({
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  h1: { color: colors.textMain, fontSize: 26, fontWeight: '700', flexShrink: 1 },
-  title: { color: colors.textMain, fontSize: 17, fontWeight: '700' },
-  meta: { color: colors.textSub, fontSize: 13 },
+  h1: { color: colors.textMain, fontSize: 24, fontWeight: '700', flexShrink: 1, letterSpacing: -0.5, fontFamily: fontDisplay },
+  title: { color: colors.textMain, fontSize: 17, fontWeight: '700', lineHeight: 22 },
+  meta: { color: colors.textSub, fontSize: 13, flexShrink: 1 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
-  slots: { color: colors.textSub, fontSize: 13 },
+  slots: { color: colors.textSub, fontSize: 12.5, fontFamily: fontMono, flexShrink: 0 },
   actions: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
 });

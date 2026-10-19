@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 import { api, ApiError } from '../api/client';
@@ -19,7 +20,7 @@ import {
 } from '../components/ui';
 import { playerAchievements, rankFor } from '../lib/profile';
 import { useToast } from '../store';
-import { colors, fontMono, radius, spacing } from '../theme';
+import { colors, fontDisplay, fontMono, radius, spacing } from '../theme';
 
 /** Чужой профиль (игрока или организатора) — read-only.
  *
@@ -104,18 +105,22 @@ function PlayerProfileView({ p }: { p: PlayerProfile }) {
       <Text style={styles.h1}>Профиль игрока</Text>
 
       <Card style={styles.head}>
-        <Avatar name={name} size={72} />
-        <View style={{ flex: 1, gap: 6 }}>
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.sub}>{p.city || 'город не указан'}</Text>
+        <Avatar name={name} src={p.photo} size={72} />
+        <View style={styles.headInfo}>
+          <Text style={styles.name} numberOfLines={1}>
+            {name}
+          </Text>
+          <Text style={styles.sub} numberOfLines={1}>
+            {p.city || 'город не указан'}
+          </Text>
           <View style={styles.badges}>
             <View style={styles.pillInfo}>
-              <Text style={styles.pillInfoText}>
+              <Text style={styles.pillInfoText} numberOfLines={1}>
                 {SKILL_LEVELS[Number(p.skill_level) as keyof typeof SKILL_LEVELS] ?? '—'}
               </Text>
             </View>
             <View style={styles.pillMuted}>
-              <Text style={styles.pillMutedText}>
+              <Text style={styles.pillMutedText} numberOfLines={1}>
                 {POSITIONS[Number(p.position) as keyof typeof POSITIONS] ?? 'Амплуа не указано'}
               </Text>
             </View>
@@ -129,14 +134,16 @@ function PlayerProfileView({ p }: { p: PlayerProfile }) {
             <View style={styles.rankIc}>
               <Icon name="medal-outline" size={26} color={colors.gold} />
             </View>
-            <View style={{ flexShrink: 1 }}>
-              <Text style={styles.rankName}>{rankName}</Text>
-              <Text style={styles.rankSub}>
+            <View style={styles.rankInfo}>
+              <Text style={styles.rankName} numberOfLines={1}>
+                {rankName}
+              </Text>
+              <Text style={styles.rankSub} numberOfLines={1}>
                 {nextTier ? `до ${nextTier.name} ${Math.max(0, tier.max - p.elo_rating)} ELO` : 'максимальный ранг'}
               </Text>
             </View>
           </View>
-          <Text style={styles.rankElo} accessibilityLabel={`Рейтинг ELO ${p.elo_rating}`}>
+          <Text style={styles.rankElo} numberOfLines={1} accessibilityLabel={`Рейтинг ELO ${p.elo_rating}`}>
             {p.elo_rating}
           </Text>
         </View>
@@ -191,10 +198,14 @@ function OrganizerProfileView({ p }: { p: OrganizerProfile }) {
       <Text style={styles.h1}>Профиль организатора</Text>
 
       <Card style={styles.head}>
-        <Avatar name={name} size={72} />
-        <View style={{ flex: 1, gap: 6 }}>
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.sub}>{p.city || 'город не указан'}</Text>
+        <Avatar name={name} src={p.photo} size={72} />
+        <View style={styles.headInfo}>
+          <Text style={styles.name} numberOfLines={1}>
+            {name}
+          </Text>
+          <Text style={styles.sub} numberOfLines={1}>
+            {p.city || 'город не указан'}
+          </Text>
           <View style={styles.badges}>
             <View style={styles.pillInfo}>
               <Text style={styles.pillInfoText}>Организатор</Text>
@@ -214,9 +225,9 @@ function OrganizerProfileView({ p }: { p: OrganizerProfile }) {
       ) : null}
 
       <View style={styles.statsGrid}>
-        <Stat num={p.total_games} cap="Организовано игр" />
-        <Stat num={p.organizer_rating} cap="Рейтинг организатора" accent />
-        <Stat num={p.games_cancelled} cap="Отменено игр" />
+        <Stat num={p.total_games} cap="Игры" />
+        <Stat num={p.organizer_rating} cap="Рейтинг" accent />
+        <Stat num={p.games_cancelled} cap="Отменено" />
       </View>
     </>
   );
@@ -225,30 +236,49 @@ function OrganizerProfileView({ p }: { p: OrganizerProfile }) {
 function Stat({ num, cap, accent }: { num: number | string; cap: string; accent?: boolean }) {
   return (
     <Card style={styles.stat}>
-      <Text style={[styles.statNum, accent && { color: colors.gold }]}>{num}</Text>
-      <Text style={styles.statCap}>{cap}</Text>
+      <Text style={[styles.statNum, accent && { color: colors.gold }]} numberOfLines={1}>
+        {num}
+      </Text>
+      <Text style={styles.statCap} numberOfLines={1}>
+        {cap}
+      </Text>
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
   back: { color: colors.primary, fontSize: 15, fontWeight: '600' },
-  h1: { color: colors.textMain, fontSize: 28, fontWeight: '700' },
-  h3: { color: colors.textMain, fontSize: 18, fontWeight: '600' },
-  head: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, flexWrap: 'wrap' },
-  name: { color: colors.textMain, fontSize: 22, fontWeight: '700' },
-  sub: { color: colors.textSub, fontSize: 14 },
-  badges: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  pillInfo: { backgroundColor: colors.infoBg, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 },
-  pillInfoText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
-  pillMuted: { backgroundColor: 'rgba(100,116,139,0.18)', borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 },
-  pillMutedText: { color: colors.muted, fontSize: 12, fontWeight: '600' },
+  h1: { color: colors.textMain, fontSize: 26, fontWeight: '700', letterSpacing: -0.5, fontFamily: fontDisplay },
+  h3: { color: colors.textMain, fontSize: 17, fontWeight: '700', fontFamily: fontDisplay },
+  head: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg },
+  headInfo: { flex: 1, minWidth: 0, gap: 5 },
+  name: { color: colors.textMain, fontSize: 21, fontWeight: '700', letterSpacing: -0.4, fontFamily: fontDisplay },
+  sub: { color: colors.textSub, fontSize: 13.5 },
+  badges: { flexDirection: 'row', gap: spacing.sm, marginTop: 2 },
+  pillInfo: {
+    backgroundColor: colors.infoBg,
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  pillInfoText: { color: colors.primary, fontSize: 11.5, fontWeight: '600' },
+  pillMuted: {
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  pillMutedText: { color: colors.muted, fontSize: 11.5, fontWeight: '600' },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   metaNum: { color: colors.meta, fontSize: 12, fontFamily: fontMono },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  stat: { flexGrow: 1, flexBasis: 150, alignItems: 'center', padding: spacing.lg },
-  statNum: { color: colors.accent, fontSize: 28, fontWeight: '700', fontFamily: fontMono },
-  statCap: { color: colors.textSub, fontSize: 12, marginTop: 4, textAlign: 'center' },
+  stat: { flexGrow: 1, flexBasis: '30%', minWidth: 0, alignItems: 'center', padding: spacing.md },
+  statNum: { color: colors.accent, fontSize: 22, fontWeight: '700', fontFamily: fontMono },
+  statCap: { color: colors.textSub, fontSize: 10.5, marginTop: 4, textAlign: 'center' },
   rank: {
     borderWidth: 1,
     borderColor: 'rgba(245,165,36,0.32)',
@@ -256,23 +286,24 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     gap: 0,
   },
-  rankTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg },
-  rankBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flexShrink: 1 },
+  rankTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  rankBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1, minWidth: 0 },
+  rankInfo: { flex: 1, minWidth: 0 },
   rankIc: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
+    width: 46,
+    height: 46,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(245,165,36,0.18)',
+    backgroundColor: 'rgba(245,165,36,0.16)',
     borderWidth: 1,
-    borderColor: 'rgba(245,165,36,0.40)',
+    borderColor: 'rgba(245,165,36,0.38)',
   },
-  rankName: { color: colors.textMain, fontSize: 19, fontWeight: '700' },
-  rankSub: { color: colors.meta, fontSize: 11.5, fontFamily: fontMono, marginTop: 2 },
-  rankElo: { color: colors.gold, fontSize: 32, fontWeight: '800', fontFamily: fontMono },
-  rankLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
-  rankLabelText: { color: colors.textSub, fontSize: 11, fontFamily: fontMono },
+  rankName: { color: colors.textMain, fontSize: 18, fontWeight: '700' },
+  rankSub: { color: colors.meta, fontSize: 11, fontFamily: fontMono, marginTop: 2 },
+  rankElo: { color: colors.gold, fontSize: 30, fontWeight: '800', fontFamily: fontMono, flexShrink: 0 },
+  rankLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6, gap: spacing.sm },
+  rankLabelText: { color: colors.textSub, fontSize: 10.5, fontFamily: fontMono, flexShrink: 1 },
   ach: {
     flexDirection: 'row',
     alignItems: 'center',

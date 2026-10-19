@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
@@ -66,7 +67,7 @@ export default function RegisterScreen() {
   return (
     <AuthLayout title="Регистрация" subtitle="Шаг 1 из 3 — аккаунт">
       {generalError ? (
-        <Banner kind="error" icon="⚠️">
+        <Banner kind="error" icon="alert-outline">
           {generalError}
         </Banner>
       ) : null}
@@ -126,7 +127,7 @@ export default function RegisterScreen() {
               style={{ paddingRight: 52 }}
             />
             <Pressable style={styles.eye} onPress={() => setShowPass((s) => !s)}>
-              <Text style={styles.eyeText}>{showPass ? '🙈' : '👁️'}</Text>
+              <Icon name={showPass ? 'eye-off-outline' : 'eye-outline'} size={20} color={colors.muted} />
             </Pressable>
           </View>
         </Field>
@@ -178,23 +179,23 @@ function RoleCard({
 
 const styles = StyleSheet.create({
   form: { gap: spacing.lg },
-  roleRow: { flexDirection: 'row', gap: spacing.md },
+  roleRow: { flexDirection: 'row', gap: spacing.sm },
   roleCard: {
     flex: 1,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
+    minWidth: 0,
+    padding: spacing.md,
+    borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
     alignItems: 'center',
     gap: 2,
   },
-  roleCardOn: { borderColor: colors.primary, backgroundColor: colors.infoBg },
+  roleCardOn: { borderColor: 'rgba(59,130,246,0.55)', backgroundColor: colors.infoBg },
   roleIcon: { marginBottom: 4 },
-  roleTitle: { color: colors.textMain, fontWeight: '700' },
-  roleCaption: { color: colors.textSub, fontSize: 12, textAlign: 'center' },
+  roleTitle: { color: colors.textMain, fontWeight: '700', fontSize: 14 },
+  roleCaption: { color: colors.textSub, fontSize: 11.5, textAlign: 'center', lineHeight: 15 },
   eye: { position: 'absolute', right: 6, top: 4, padding: 10 },
-  eyeText: { fontSize: 18 },
   footer: { alignItems: 'center' },
   footerText: { color: colors.textSub, fontSize: 15 },
   link: { color: colors.accent, fontWeight: '600' },

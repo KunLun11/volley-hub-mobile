@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 import { api } from '../api/client';
@@ -11,6 +12,7 @@ import {
   Btn,
   Card,
   GameStatusBadge,
+  Icon,
   LevelBadge,
   Modal,
   Screen,
@@ -21,7 +23,7 @@ import {
 } from '../components/ui';
 import { useToast } from '../store';
 import ScoreEntry from '../components/ScoreEntry';
-import { colors, fontMono, radius, spacing } from '../theme';
+import { colors, fontDisplay, fontMono, radius, spacing } from '../theme';
 
 interface ParticipantLite {
   id: number;
@@ -188,11 +190,25 @@ export default function ManageGameScreen() {
         ) : (
           <Card style={{ gap: spacing.md }}>
             <View style={styles.rowBetween}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.h2}>{detail.title}</Text>
-                <Text style={styles.meta}>
-                  {formatDate(detail.date_time)} · {detail.location.name} · {formatMoney(detail.price)}
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.h2} numberOfLines={2}>
+                  {detail.title}
                 </Text>
+                <View style={styles.metaRow}>
+                  <Icon name="calendar-blank-outline" size={14} color={colors.meta} />
+                  <Text style={styles.meta} numberOfLines={1}>
+                    {formatDate(detail.date_time)}
+                  </Text>
+                </View>
+                <View style={styles.metaRow}>
+                  <Icon name="map-marker-outline" size={14} color={colors.meta} />
+                  <Text style={styles.meta} numberOfLines={1}>
+                    {detail.location.name}
+                  </Text>
+                  <Text style={styles.metaPrice} numberOfLines={1}>
+                    {formatMoney(detail.price)}
+                  </Text>
+                </View>
               </View>
             </View>
             <View style={styles.badgeRow}>
@@ -220,11 +236,11 @@ export default function ManageGameScreen() {
             {detail.status === 4 && detail.winner_team != null ? (
               <View style={styles.resultLine}>
                 <View style={styles.statusBadge}>
-                  <Text style={[styles.statusText, { color: colors.success }]}>
+                  <Text style={[styles.statusText, { color: colors.success }]} numberOfLines={1}>
                     Победа: команда {detail.winner_team}
                   </Text>
                 </View>
-                <Text style={styles.resultScore}>
+                <Text style={styles.resultScore} numberOfLines={1}>
                   {detail.team_1_sets_won ?? 0} : {detail.team_2_sets_won ?? 0}
                 </Text>
                 {detail.set_scores && detail.set_scores.length > 0 ? (
@@ -237,7 +253,7 @@ export default function ManageGameScreen() {
 
             {/* Ответственный за счёт: назначает организатор */}
             <View style={styles.responsibleRow}>
-              <Text style={styles.meta}>
+              <Text style={[styles.meta, { flexShrink: 1 }]} numberOfLines={2}>
                 Ответственный за счёт:{' '}
                 <Text style={{ color: colors.textMain, fontWeight: '700' }}>
                   {detail.responsible
@@ -272,9 +288,46 @@ export default function ManageGameScreen() {
             const identity = (
               <>
                 <Avatar name={p.player_name} size={36} />
-                <View>
-                  <Text style={styles.pName}>{p.player_name}</Text>
+                <View style={styles.pInfo}>
+                  <Text style={styles.pName} numberOfLines={1}>
+                    {p.player_name}
+                  </Text>
                   <Text style={styles.pSub}>ELO {p.player_elo}</Text>
+                  <View style={styles.pBadges}>
+                    <View style={[styles.statusBadge, statusStyle(p.status)]}>
+                      <Text style={[styles.statusText, statusTextStyle(p.status)]} numberOfLines={1}>
+                        {statusLabel(p.status)}
+                      </Text>
+                    </View>
+                    {p.team != null ? (
+                      <View style={[styles.statusBadge, { backgroundColor: colors.infoBg }]}>
+                        <Text style={[styles.statusText, { color: colors.primary }]} numberOfLines={1}>
+                          Команда {p.team}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {hasResult && p.result ? (
+                      <View
+                        style={[
+                          styles.statusBadge,
+                          { backgroundColor: p.result === 1 ? colors.successBg : colors.dangerBg },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.statusText,
+                            { color: p.result === 1 ? colors.success : colors.danger },
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {p.result === 1 ? 'Победа' : 'Поражение'}
+                          {p.elo_before != null && p.elo_after != null
+                            ? ` ${p.elo_after - p.elo_before > 0 ? '+' : ''}${p.elo_after - p.elo_before}`
+                            : ''}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
               </>
             );
@@ -288,47 +341,18 @@ export default function ManageGameScreen() {
                     accessibilityLabel={`Открыть профиль ${p.player_name}`}
                   >
                     {identity}
+                    <Icon name="chevron-right" size={18} color={colors.muted} />
                   </Pressable>
                 ) : (
                   <View style={styles.identity}>{identity}</View>
                 )}
-                <View style={styles.row}>
-                  <View style={[styles.statusBadge, statusStyle(p.status)]}>
-                    <Text style={[styles.statusText, statusTextStyle(p.status)]}>{statusLabel(p.status)}</Text>
-                  </View>
-                  {p.team != null ? (
-                    <View style={[styles.statusBadge, { backgroundColor: colors.infoBg }]}>
-                      <Text style={[styles.statusText, { color: colors.primary }]}>Команда {p.team}</Text>
-                    </View>
-                  ) : null}
-                  {hasResult && p.result ? (
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        { backgroundColor: p.result === 1 ? colors.successBg : colors.dangerBg },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusText,
-                          { color: p.result === 1 ? colors.success : colors.danger },
-                        ]}
-                      >
-                        {p.result === 1 ? 'Победа' : 'Поражение'}
-                        {p.elo_before != null && p.elo_after != null
-                          ? ` ${p.elo_after - p.elo_before > 0 ? '+' : ''}${p.elo_after - p.elo_before}`
-                          : ''}
-                      </Text>
-                    </View>
-                  ) : null}
-                </View>
                 <View style={styles.actionsCol}>
                   {p.status === 1 ? (
                     <Btn
                       kind="success"
                       small
                       loading={busyId === p.id}
-                      onPress={() => act(p.id, (g, pid) => api.markPaid(g, pid), `${p.player_name}: оплачено ✅`)}
+                      onPress={() => act(p.id, (g, pid) => api.markPaid(g, pid), `${p.player_name}: оплачено`)}
                     >
                       Оплатил
                     </Btn>
@@ -370,7 +394,11 @@ export default function ManageGameScreen() {
           Выберите участника, который в перерывах между партиями будет вводить счёт. Он увидит форму ввода на
           странице игры.
         </Text>
-        <ScrollView style={{ maxHeight: 360 }} contentContainerStyle={{ gap: spacing.sm, marginTop: spacing.md }}>
+        <ScrollView
+          style={{ maxHeight: 360 }}
+          contentContainerStyle={{ gap: spacing.sm, marginTop: spacing.md }}
+          nestedScrollEnabled
+        >
           {players
             .filter((p) => p.status === 1 || p.status === 2 || p.status === 3)
             .map((p) => {
@@ -379,7 +407,9 @@ export default function ManageGameScreen() {
                 <View key={p.id} style={styles.participant}>
                   <Avatar name={p.player_name} size={36} />
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.pName}>{p.player_name}</Text>
+                    <Text style={styles.pName} numberOfLines={1}>
+                      {p.player_name}
+                    </Text>
                     <Text style={styles.pSub}>ELO {p.player_elo}</Text>
                   </View>
                   <Btn
@@ -477,36 +507,50 @@ function statusTextStyle(s: number) {
 }
 
 const styles = StyleSheet.create({
-  back: { color: colors.primary, fontSize: 15, fontWeight: '600' },
-  h2: { color: colors.textMain, fontSize: 22, fontWeight: '700' },
-  h3: { color: colors.textMain, fontSize: 18, fontWeight: '600' },
-  meta: { color: colors.textSub, fontSize: 13, marginTop: 4, lineHeight: 19 },
-  muted: { color: colors.textSub, fontSize: 14 },
+  back: { color: colors.accent, fontSize: 14, fontWeight: '600' },
+  h2: { color: colors.textMain, fontSize: 21, fontWeight: '700', letterSpacing: -0.4, fontFamily: fontDisplay },
+  h3: { color: colors.textMain, fontSize: 17, fontWeight: '700', fontFamily: fontDisplay },
+  meta: { color: colors.textSub, fontSize: 12.5, lineHeight: 18, flexShrink: 1 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4, minWidth: 0 },
+  metaPrice: { color: colors.gold, fontSize: 12.5, fontFamily: fontMono, marginLeft: 'auto', flexShrink: 0 },
+  muted: { color: colors.textSub, fontSize: 13.5, lineHeight: 19 },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   badgeRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minWidth: 0 },
   participant: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
     padding: spacing.md,
     borderRadius: radius.md,
     backgroundColor: colors.surfaceSoft,
     flexWrap: 'wrap',
+    minWidth: 0,
   },
-  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1, minWidth: 140 },
+  identity: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1, minWidth: 0 },
   pressed: { opacity: 0.85 },
+  pInfo: { flex: 1, minWidth: 0, gap: 2 },
+  pBadges: { flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 3 },
   pName: { color: colors.textMain, fontSize: 14, fontWeight: '600' },
-  pSub: { color: colors.textSub, fontSize: 12 },
-  statusBadge: { borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 },
-  statusText: { fontSize: 12, fontWeight: '600' },
-  actionsCol: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', width: '100%' },
+  pSub: { color: colors.textSub, fontSize: 11.5, fontFamily: fontMono },
+  statusBadge: {
+    borderRadius: radius.full,
+    paddingHorizontal: 9,
+    paddingVertical: 2,
+    maxWidth: '100%',
+  },
+  statusText: { fontSize: 11, fontWeight: '600' },
+  actionsCol: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap', width: '100%', marginTop: 2 },
   resultLine: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
   responsibleRow: {
     borderTopWidth: 1,
     borderTopColor: colors.border,
     paddingTop: spacing.md,
     gap: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
   resultScore: { color: colors.gold, fontSize: 20, fontWeight: '700', fontFamily: fontMono },
   setsLine: { color: colors.textSub, fontSize: 12, fontFamily: fontMono, letterSpacing: 1 },

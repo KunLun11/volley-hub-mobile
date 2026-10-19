@@ -1,14 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
 import { POSITIONS, SKILL_LEVELS } from '../types';
-import { AppHeader, Bar, Btn, Screen, contentStyle } from '../components/ui';
+import { AppHeader, Bar, Btn, Icon, Screen, contentStyle } from '../components/ui';
 import { Field, Input, RadioPills, Select } from '../components/form';
 import { pickImageDataUri } from '../lib/image';
 import { useAuth, useToast } from '../store';
-import { colors, radius, spacing } from '../theme';
+import { colors, fontDisplay, radius, spacing } from '../theme';
 
 /** A4. Онбординг: заполнение профиля игрока (профиль + обязательное фото). */
 export default function OnboardingScreen() {
@@ -93,7 +94,7 @@ export default function OnboardingScreen() {
         photo,
       });
       login(form.first_name || 'Михаил', 'player');
-      toast.push('Профиль сохранён 🎉', 'success');
+      toast.push('Профиль сохранён', 'success');
       nav.reset({ index: 0, routes: [{ name: 'Tabs' }] });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Не удалось сохранить профиль';
@@ -125,8 +126,9 @@ export default function OnboardingScreen() {
         <View style={styles.form}>
           <Field label="Фото профиля *" error={photoError}>
             <Pressable style={styles.photoDrop} onPress={choosePhoto}>
-              <Text style={styles.photoDropText}>
-                {photo ? '✓ Фото выбрано — нажмите, чтобы заменить' : '📷 Выбрать фото · jpg, png, webp · до 5 МБ'}
+              <Icon name={photo ? 'check-circle-outline' : 'camera-outline'} size={20} color={colors.accent} />
+              <Text style={styles.photoDropText} numberOfLines={2}>
+                {photo ? 'Фото выбрано — нажмите, чтобы заменить' : 'Выбрать фото · jpg, png, webp'}
               </Text>
             </Pressable>
           </Field>
@@ -193,16 +195,21 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  h1: { color: colors.textMain, fontSize: 26, fontWeight: '700' },
-  sub: { color: colors.textSub, fontSize: 13, marginTop: 8 },
+  h1: { color: colors.textMain, fontSize: 25, fontWeight: '700', letterSpacing: -0.5, fontFamily: fontDisplay },
+  sub: { color: colors.textSub, fontSize: 12.5, marginTop: 8, lineHeight: 18 },
   form: { gap: spacing.lg },
   photoDrop: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    paddingVertical: 24,
+    borderColor: colors.border2,
+    borderRadius: radius.md,
+    paddingVertical: 16,
+    paddingHorizontal: spacing.md,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceSoft,
   },
-  photoDropText: { color: colors.textSub, fontSize: 14, textAlign: 'center' },
+  photoDropText: { color: colors.textSub, fontSize: 13.5, flexShrink: 1 },
 });

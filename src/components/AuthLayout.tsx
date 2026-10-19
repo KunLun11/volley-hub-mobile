@@ -1,7 +1,8 @@
 import React from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from './Text';
 
-import { colors, spacing } from '../theme';
+import { colors, fontDisplay, spacing } from '../theme';
 import { Icon, Screen } from './ui';
 
 /**
@@ -47,8 +48,14 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: { padding: spacing.xl, paddingBottom: 56, gap: spacing.lg },
   brand: { alignItems: 'center', gap: 6, marginBottom: spacing.sm },
-  brandText: { color: colors.textMain, fontSize: 22, fontWeight: '700' },
-  brandAccent: { color: colors.accent },
-  title: { color: colors.textMain, fontSize: 26, fontWeight: '700' },
-  subtitle: { color: colors.textSub, fontSize: 15, marginTop: -spacing.md },
+  brandText: { color: colors.textMain, fontSize: 22, fontWeight: '700', fontFamily: fontDisplay },
+  brandAccent: { color: colors.accent2 },
+  title: {
+    color: colors.textMain,
+    fontSize: 27,
+    fontWeight: '700',
+    letterSpacing: -0.6,
+    fontFamily: fontDisplay,
+  },
+  subtitle: { color: colors.textSub, fontSize: 14, marginTop: -spacing.md, lineHeight: 20 },
 });

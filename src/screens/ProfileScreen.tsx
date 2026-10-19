@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/Text';
 
 import { api } from '../api/client';
 import type { PlayerProfile } from '../types';
@@ -12,19 +13,20 @@ import {
   EmptyState,
   Icon,
   Skeleton,
-  contentStyle,
+  useTabContentStyle,
 } from '../components/ui';
 import { Field, Input, RadioPills, Select } from '../components/form';
 import { pickImageDataUri } from '../lib/image';
 import { rankFor } from '../lib/profile';
 import { useAuth, useToast } from '../store';
 import { useNavigation } from '@react-navigation/native';
-import { colors, fontMono, radius, spacing } from '../theme';
+import { colors, fontDisplay, fontMono, radius, spacing } from '../theme';
 
 /** Б5. Профиль -> GET /users/me/ + PATCH profiles/... */
 export default function ProfileScreen() {
   const nav = useNavigation<any>();
   const toast = useToast();
+  const contentStyle = useTabContentStyle();
   const { isAuth } = useAuth();
 
   const [p, setP] = useState<PlayerProfile | null>(null);
@@ -144,27 +146,34 @@ export default function ProfileScreen() {
       <Text style={styles.h1}>Профиль</Text>
 
       <Card style={styles.head}>
-        <Avatar name={name} size={72} />
-        <View style={{ flex: 1, gap: 6 }}>
-          <Text style={styles.name}>{name}</Text>
-          <Text style={styles.sub}>
-            {p.user.email} · {p.city || 'город не указан'}
-          </Text>
-          <View style={styles.badges}>
-            <View style={styles.pillInfo}>
-              <Text style={styles.pillInfoText}>
-                Уровень: {SKILL_LEVELS[Number(p.skill_level) as keyof typeof SKILL_LEVELS] ?? '—'}
-              </Text>
-            </View>
-            <View style={styles.pillPrimary}>
-              <Text style={styles.pillPrimaryText}>
-                {POSITIONS[Number(p.position) as keyof typeof POSITIONS] ?? 'Амплуа не указано'}
-              </Text>
+        <View style={styles.headTop}>
+          <Avatar name={name} src={p.photo} size={72} />
+          <View style={styles.headInfo}>
+            <Text style={styles.name} numberOfLines={1}>
+              {name}
+            </Text>
+            <Text style={styles.sub} numberOfLines={1}>
+              {p.user.email}
+            </Text>
+            <Text style={styles.sub} numberOfLines={1}>
+              {p.city || 'город не указан'}
+            </Text>
+            <View style={styles.badges}>
+              <View style={styles.pillInfo}>
+                <Text style={styles.pillInfoText} numberOfLines={1}>
+                  {SKILL_LEVELS[Number(p.skill_level) as keyof typeof SKILL_LEVELS] ?? '—'}
+                </Text>
+              </View>
+              <View style={styles.pillPrimary}>
+                <Text style={styles.pillPrimaryText} numberOfLines={1}>
+                  {POSITIONS[Number(p.position) as keyof typeof POSITIONS] ?? 'Амплуа не указано'}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
-        <Btn kind="secondary" small onPress={() => setEditing((e) => !e)}>
-          {editing ? 'Отмена' : 'Изменить'}
+        <Btn kind="secondary" small onPress={() => setEditing((e) => !e)} block>
+          {editing ? 'Отмена' : 'Изменить профиль'}
         </Btn>
       </Card>
 
@@ -174,14 +183,16 @@ export default function ProfileScreen() {
             <View style={styles.rankIc}>
               <Icon name="medal-outline" size={26} color={colors.gold} />
             </View>
-            <View>
-              <Text style={styles.rankName}>{rankName}</Text>
-              <Text style={styles.rankSub}>
+            <View style={styles.rankInfo}>
+              <Text style={styles.rankName} numberOfLines={1}>
+                {rankName}
+              </Text>
+              <Text style={styles.rankSub} numberOfLines={1}>
                 {nextTier ? `до ${nextTier.name} ${Math.max(0, tier.max - p.elo_rating)} ELO` : 'максимальный ранг'}
               </Text>
             </View>
           </View>
-          <Text style={styles.rankElo} aria-label={`Рейтинг ELO ${p.elo_rating}`}>
+          <Text style={styles.rankElo} numberOfLines={1} aria-label={`Рейтинг ELO ${p.elo_rating}`}>
             {eloAnim}
           </Text>
         </View>
@@ -200,7 +211,7 @@ export default function ProfileScreen() {
         <Stat num={eloAnim} cap="Рейтинг ELO" accent />
         <Stat num={p.total_games} cap="Всего игр" />
         <Stat num={p.total_tournament} cap="Турниры" />
-        <Stat num={`${p.completion_percentage}%`} cap="Заполненность профиля" bar={p.completion_percentage} />
+        <Stat num={`${p.completion_percentage}%`} cap="Заполнено" bar={p.completion_percentage} />
       </View>
 
       {editing ? (
@@ -208,11 +219,10 @@ export default function ProfileScreen() {
           <Text style={styles.h3}>Редактирование</Text>
           <Field label="Фото профиля" error={photoError}>
             <Pressable style={styles.photoDrop} onPress={choosePhoto}>
-              {photo ? (
-                <Text style={styles.photoDropText}>✓ Новое фото выбрано</Text>
-              ) : (
-                <Text style={styles.photoDropText}>📷 Выбрать фото · jpg, png, webp · до 5 МБ</Text>
-              )}
+              <Icon name={photo ? 'check-circle-outline' : 'camera-outline'} size={20} color={colors.accent} />
+              <Text style={styles.photoDropText} numberOfLines={1}>
+                {photo ? 'Новое фото выбрано' : 'Выбрать фото · jpg, png, webp'}
+              </Text>
             </Pressable>
           </Field>
 
@@ -280,8 +290,12 @@ export default function ProfileScreen() {
 function Stat({ num, cap, accent, bar }: { num: number | string; cap: string; accent?: boolean; bar?: number }) {
   return (
     <Card style={styles.stat}>
-      <Text style={[styles.statNum, accent && { color: colors.gold }]}>{num}</Text>
-      <Text style={styles.statCap}>{cap}</Text>
+      <Text style={[styles.statNum, accent && { color: colors.gold }]} numberOfLines={1}>
+        {num}
+      </Text>
+      <Text style={styles.statCap} numberOfLines={1}>
+        {cap}
+      </Text>
       {bar !== undefined ? (
         <View style={{ marginTop: 8 }}>
           <Bar value={bar} variant="info" />
@@ -292,20 +306,36 @@ function Stat({ num, cap, accent, bar }: { num: number | string; cap: string; ac
 }
 
 const styles = StyleSheet.create({
-  h1: { color: colors.textMain, fontSize: 28, fontWeight: '700' },
-  h3: { color: colors.textMain, fontSize: 18, fontWeight: '600' },
-  head: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg, flexWrap: 'wrap' },
-  name: { color: colors.textMain, fontSize: 22, fontWeight: '700' },
-  sub: { color: colors.textSub, fontSize: 14 },
-  badges: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  pillInfo: { backgroundColor: colors.infoBg, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 },
-  pillInfoText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
-  pillPrimary: { backgroundColor: colors.infoBg, borderRadius: radius.full, paddingHorizontal: 10, paddingVertical: 3 },
-  pillPrimaryText: { color: colors.primary, fontSize: 12, fontWeight: '600' },
+  h1: { color: colors.textMain, fontSize: 26, fontWeight: '700', letterSpacing: -0.5, fontFamily: fontDisplay },
+  h3: { color: colors.textMain, fontSize: 17, fontWeight: '700', fontFamily: fontDisplay },
+  head: { gap: spacing.lg },
+  headTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.lg },
+  headInfo: { flex: 1, minWidth: 0, gap: 5 },
+  name: { color: colors.textMain, fontSize: 21, fontWeight: '700', letterSpacing: -0.4, fontFamily: fontDisplay },
+  sub: { color: colors.textSub, fontSize: 13.5 },
+  badges: { flexDirection: 'row', gap: spacing.sm, marginTop: 2 },
+  pillInfo: {
+    backgroundColor: colors.infoBg,
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  pillInfoText: { color: colors.primary, fontSize: 11.5, fontWeight: '600' },
+  pillPrimary: {
+    backgroundColor: 'rgba(45,212,191,0.12)',
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  pillPrimaryText: { color: colors.accent2, fontSize: 11.5, fontWeight: '600' },
   statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md },
-  stat: { flexGrow: 1, flexBasis: 150, alignItems: 'center', padding: spacing.lg },
-  statNum: { color: colors.accent, fontSize: 28, fontWeight: '700', fontFamily: fontMono },
-  statCap: { color: colors.textSub, fontSize: 12, marginTop: 4, textAlign: 'center' },
+  stat: { flexGrow: 1, flexBasis: '45%', minWidth: 0, alignItems: 'center', padding: spacing.lg },
+  statNum: { color: colors.accent, fontSize: 26, fontWeight: '700', fontFamily: fontMono },
+  statCap: { color: colors.textSub, fontSize: 11, marginTop: 4, textAlign: 'center' },
   rank: {
     borderWidth: 1,
     borderColor: 'rgba(245,165,36,0.32)',
@@ -313,31 +343,37 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
     gap: 0,
   },
-  rankTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.lg },
-  rankBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flexShrink: 1 },
+  rankTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.md },
+  rankBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, flex: 1, minWidth: 0 },
+  rankInfo: { flex: 1, minWidth: 0 },
   rankIc: {
-    width: 50,
-    height: 50,
-    borderRadius: 14,
+    width: 46,
+    height: 46,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(245,165,36,0.18)',
+    backgroundColor: 'rgba(245,165,36,0.16)',
     borderWidth: 1,
-    borderColor: 'rgba(245,165,36,0.40)',
+    borderColor: 'rgba(245,165,36,0.38)',
   },
-  rankName: { color: colors.textMain, fontSize: 19, fontWeight: '700' },
-  rankSub: { color: colors.meta, fontSize: 11.5, fontFamily: fontMono, marginTop: 2 },
-  rankElo: { color: colors.gold, fontSize: 32, fontWeight: '800', fontFamily: fontMono },
-  rankLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
-  rankLabelText: { color: colors.textSub, fontSize: 11, fontFamily: fontMono },
+  rankName: { color: colors.textMain, fontSize: 18, fontWeight: '700' },
+  rankSub: { color: colors.meta, fontSize: 11, fontFamily: fontMono, marginTop: 2 },
+  rankElo: { color: colors.gold, fontSize: 30, fontWeight: '800', fontFamily: fontMono, flexShrink: 0 },
+  rankLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6, gap: spacing.sm },
+  rankLabelText: { color: colors.textSub, fontSize: 10.5, fontFamily: fontMono, flexShrink: 1 },
   photoDrop: {
-    borderWidth: 2,
+    borderWidth: 1,
     borderStyle: 'dashed',
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    paddingVertical: 24,
+    borderColor: colors.border2,
+    borderRadius: radius.md,
+    paddingVertical: 16,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.surfaceSoft,
   },
-  photoDropText: { color: colors.textSub, fontSize: 14, textAlign: 'center' },
+  photoDropText: { color: colors.textSub, fontSize: 13.5, flexShrink: 1 },
   body: { color: colors.textSub, fontSize: 14, lineHeight: 20 },
 });

@@ -1,18 +1,20 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import {
   ActivityIndicator,
   Animated,
   type GestureResponderEvent,
+  Image,
   Modal as RNModal,
   Pressable,
   ScrollView,
   type StyleProp,
   StyleSheet,
-  Text,
   View,
   type ViewStyle,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Text } from './Text';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
 import {
@@ -23,7 +25,17 @@ import {
   type GameList,
 } from '../types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { avatarHue, colors, fontMono, LEVEL_COLORS, radius, spacing } from '../theme';
+import {
+  avatarHue,
+  colors,
+  fontDisplay,
+  fontMono,
+  gradients,
+  LEVEL_COLORS,
+  radius,
+  shadows,
+  spacing,
+} from '../theme';
 import { useAuth } from '../store';
 import { api } from '../api/client';
 
@@ -65,15 +77,31 @@ export function Icon({
 
 export function Screen({ children }: { children: React.ReactNode }) {
   return (
-    <SafeAreaView style={styles.screen} edges={['top']}>
+    <SafeAreaView style={styles.screen} edges={['top', 'left', 'right']}>
       <View style={styles.appBg} pointerEvents="none" />
+      <LinearGradient
+        colors={gradients.glow}
+        start={{ x: 1, y: 0 }}
+        end={{ x: 0.15, y: 0.72 }}
+        style={styles.appGlow}
+        pointerEvents="none"
+      />
       {children}
     </SafeAreaView>
   );
 }
 
 export function Card({ children, style }: { children: React.ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  return (
+    <LinearGradient
+      colors={gradients.card}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 0, y: 1 }}
+      style={[styles.card, style]}
+    >
+      {children}
+    </LinearGradient>
+  );
 }
 
 export function Divider() {
@@ -83,11 +111,11 @@ export function Divider() {
 /* ---------------- Кнопка ---------------- */
 
 const BTN: Record<string, { bg: string; border: string; fg: string }> = {
-  primary: { bg: colors.accent, border: 'transparent', fg: colors.accentInk },
-  secondary: { bg: colors.surface2, border: colors.border, fg: colors.textMain },
+  primary: { bg: 'transparent', border: 'rgba(255,255,255,0.10)', fg: colors.accentInk },
+  secondary: { bg: colors.surface2, border: colors.border2, fg: colors.textMain },
   ghost: { bg: 'transparent', border: 'transparent', fg: colors.textSub },
-  danger: { bg: colors.dangerBg, border: 'rgba(244,63,94,0.38)', fg: colors.danger },
-  success: { bg: colors.successBg, border: 'rgba(34,197,94,0.38)', fg: colors.success },
+  danger: { bg: colors.dangerBg, border: 'rgba(251,113,133,0.38)', fg: colors.danger },
+  success: { bg: colors.successBg, border: 'rgba(52,211,153,0.38)', fg: colors.success },
 };
 
 export function Btn({
@@ -124,10 +152,19 @@ export function Btn({
         small && styles.btnSm,
         block && styles.btnBlock,
         inactive && { opacity: 0.5 },
-        pressed && !inactive && { transform: [{ scale: 0.98 }] },
+        pressed && !inactive && { transform: [{ scale: 0.97 }] },
         style,
       ]}
     >
+      {kind === 'primary' && !inactive ? (
+        <LinearGradient
+          colors={gradients.accent}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={StyleSheet.absoluteFill}
+          pointerEvents="none"
+        />
+      ) : null}
       {loading ? (
         <ActivityIndicator size="small" color={palette.fg} />
       ) : (
@@ -159,22 +196,36 @@ export function Badge({
   const c = map[variant];
   return (
     <View style={[styles.badge, { backgroundColor: c.bg, borderColor: c.fg + '55' }]}>
-      <Text style={[styles.badgeText, { color: c.fg }]}>{children}</Text>
+      <Text style={[styles.badgeText, { color: c.fg }]} numberOfLines={1}>
+        {children}
+      </Text>
     </View>
   );
 }
 
+/** Иконки уровней как в вебе: шевроны → звезда → молния → медаль → кубок → корона. */
+const LEVEL_ICON: Record<number, IconName> = {
+  1: 'chevron-up',
+  2: 'chevron-double-up',
+  3: 'chevron-triple-up',
+  4: 'star-outline',
+  5: 'star',
+  6: 'lightning-bolt',
+  7: 'medal-outline',
+  8: 'trophy-outline',
+  9: 'crown-outline',
+};
+
+export function levelIcon(level: number): IconName {
+  return LEVEL_ICON[level] ?? 'star-outline';
+}
+
 export function LevelBadge({ level }: { level: number }) {
   const c = LEVEL_COLORS[level] ?? LEVEL_COLORS[4];
-  const dots = Math.min(3, Math.max(1, Math.ceil(level / 3)));
   return (
     <View style={[styles.badge, styles.levelBadge, { borderColor: c.fg + '55', backgroundColor: c.bg }]}>
-      <View style={styles.dots}>
-        {Array.from({ length: dots }).map((_, i) => (
-          <View key={i} style={[styles.dot, { backgroundColor: c.fg }]} />
-        ))}
-      </View>
-      <Text style={[styles.badgeText, { color: c.fg }]}>
+      <Icon name={LEVEL_ICON[level] ?? 'star-outline'} size={13} color={c.fg} />
+      <Text style={[styles.badgeText, { color: c.fg }]} numberOfLines={1}>
         {SKILL_LEVELS[level as keyof typeof SKILL_LEVELS] ?? `Уровень ${level}`}
       </Text>
     </View>
@@ -219,7 +270,7 @@ export function GenderText({ gender }: { gender: number }) {
 
 /* ---------------- Аватар ---------------- */
 
-export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
+export function Avatar({ name, size = 40, src }: { name: string; size?: number; src?: string | null }) {
   const initials = name
     .split(' ')
     .filter(Boolean)
@@ -228,15 +279,34 @@ export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
     .join('')
     .toUpperCase();
   const hue = avatarHue(name);
+
+  if (src) {
+    return (
+      <Image
+        source={{ uri: src }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: colors.surface3,
+          borderWidth: 1,
+          borderColor: colors.border2,
+        }}
+      />
+    );
+  }
+
   return (
     <View
       style={{
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: `hsl(${hue}, 66%, 52%)`,
+        backgroundColor: `hsl(${hue}, 58%, 42%)`,
         alignItems: 'center',
         justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.14)',
       }}
     >
       <Text style={{ color: colors.accentInk, fontWeight: '700', fontSize: size * 0.38 }}>
@@ -258,17 +328,23 @@ export function Bar({
   variant?: 'sky' | 'accent' | 'info' | 'gold' | 'success' | 'danger';
 }) {
   const pct = Math.min(100, Math.round((value / Math.max(1, max)) * 100));
-  const fill: Record<string, string> = {
-    sky: colors.accent,
-    accent: colors.accent,
-    info: colors.accent,
-    gold: colors.gold,
-    success: colors.success,
-    danger: colors.danger,
+  const fill: Record<string, [string, string]> = {
+    sky: [colors.accent, colors.accent2],
+    accent: [colors.accent, colors.accent2],
+    info: [colors.accent, colors.accent2],
+    gold: ['#f5a524', '#ffd27a'],
+    success: ['#34d399', '#6ee7d0'],
+    danger: ['#fb7185', '#fda4af'],
   };
+  const c = fill[variant] ?? fill.sky;
   return (
     <View style={styles.progress}>
-      <View style={[styles.progressFill, { width: `${pct}%`, backgroundColor: fill[variant] }]} />
+      <LinearGradient
+        colors={c}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={[styles.progressFill, { width: `${pct}%` }]}
+      />
     </View>
   );
 }
@@ -316,8 +392,15 @@ export function Modal({
   return (
     <RNModal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.modalOverlay} onPress={onClose}>
-        <Pressable style={styles.modalCard} onPress={() => undefined}>
-          {children}
+        <Pressable style={styles.modalShell} onPress={() => undefined}>
+          <ScrollView
+            contentContainerStyle={styles.modalCard}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
+            {children}
+          </ScrollView>
         </Pressable>
       </Pressable>
     </RNModal>
@@ -339,13 +422,13 @@ export function Banner({
   children,
 }: {
   kind?: 'error' | 'warning' | 'success' | 'info';
-  icon?: string;
+  icon?: IconName;
   children: React.ReactNode;
 }) {
   const c = BANNER[kind];
   return (
-    <View style={[styles.banner, { backgroundColor: c.bg, borderColor: c.fg }]}>
-      {icon ? <Text>{icon}</Text> : null}
+    <View style={[styles.banner, { backgroundColor: c.bg, borderColor: c.fg + '66' }]}>
+      {icon ? <Icon name={icon} size={16} color={c.fg} /> : null}
       <Text style={[styles.bannerText, { color: c.fg }]}>{children}</Text>
     </View>
   );
@@ -357,7 +440,9 @@ export function KV({ k, v }: { k: string; v: React.ReactNode }) {
   return (
     <View style={styles.kv}>
       <Text style={styles.kvKey}>{k}</Text>
-      <Text style={styles.kvVal}>{v}</Text>
+      <Text style={styles.kvVal} numberOfLines={2}>
+        {v}
+      </Text>
     </View>
   );
 }
@@ -374,13 +459,23 @@ export function Tabs<T extends string | number>({
   onChange: (v: T) => void;
 }) {
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsRow}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.tabsRow}
+      style={styles.tabsScroll}
+    >
       {items.map((it) => {
         const active = it.value === value;
         return (
-          <Pressable key={String(it.value)} onPress={() => onChange(it.value)} style={styles.tab}>
-            <Text style={[styles.tabText, active && styles.tabTextActive]}>{it.label}</Text>
-            <View style={[styles.tabUnderline, active && { backgroundColor: colors.primary }]} />
+          <Pressable
+            key={String(it.value)}
+            onPress={() => onChange(it.value)}
+            style={[styles.tab, active && styles.tabActive]}
+          >
+            <Text style={[styles.tabText, active && styles.tabTextActive]} numberOfLines={1}>
+              {it.label}
+            </Text>
           </Pressable>
         );
       })}
@@ -397,10 +492,17 @@ export function AppHeader() {
 
   return (
     <View style={styles.header}>
+      <LinearGradient
+        colors={['#111318', '#0b0c10']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
       <View style={styles.headerInner}>
         <Pressable onPress={() => nav.navigate('Tabs')} style={styles.logo}>
-          <Icon name="volleyball" size={24} color={colors.accent} />
-          <Text style={styles.logoText}>
+          <Icon name="volleyball" size={23} color={colors.accent} />
+          <Text style={styles.logoText} numberOfLines={1}>
             Volley<Text style={styles.logoAccent}>Hub</Text>
           </Text>
         </Pressable>
@@ -507,25 +609,44 @@ export function GameCard({ game, onPress }: { game: GameList; onPress: () => voi
       : `Свободно ${free} из ${game.capacity}`;
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.card, styles.gameCard, pressed && styles.gameCardPressed]}>
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, styles.gameCard, pressed && styles.gameCardPressed]}
+    >
+      <LinearGradient
+        colors={gradients.card}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0, y: 1 }}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+
+      <View style={styles.priceBadge}>
+        <Text style={styles.priceBadgeText} numberOfLines={1}>
+          {formatMoney(game.price)}
+        </Text>
+      </View>
+
       <View style={styles.gameTop}>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={styles.gameTitle} numberOfLines={2}>{game.title}</Text>
+        <View style={styles.gameTopMain}>
+          <Text style={styles.gameTitle} numberOfLines={2}>
+            {game.title}
+          </Text>
           <View style={styles.gameWhen}>
             <Icon name="clock-outline" size={13} color={colors.meta} />
-            <Text style={styles.gameWhenText}>
+            <Text style={styles.gameWhenText} numberOfLines={1}>
               {formatDate(game.date_time)} · {game.duration_minutes} мин
             </Text>
           </View>
         </View>
-        <LevelBadge level={game.skill_level} />
       </View>
 
       <View style={styles.gameMeta}>
         <View style={styles.gameMetaRow}>
           <Icon name="map-marker-outline" size={15} color={colors.meta} />
           <Text style={styles.gameMetaText} numberOfLines={1}>
-            {game.location.name}{game.location.address ? ` · ${game.location.address}` : ''}
+            {game.location.name}
+            {game.location.address ? ` · ${game.location.address}` : ''}
           </Text>
         </View>
         <View style={styles.gameMetaRow}>
@@ -536,23 +657,30 @@ export function GameCard({ game, onPress }: { game: GameList; onPress: () => voi
         </View>
       </View>
 
-      <View>
+      <View style={styles.capBlock}>
         <Bar value={game.booked_count} max={game.capacity} variant={full ? 'danger' : few ? 'gold' : 'sky'} />
-        <View style={styles.capRow}>
-          <Text
-            style={[styles.capTxt, few && { color: colors.warning, fontWeight: '600' }, full && { color: colors.danger, fontWeight: '600' }]}
-          >
-            {capTxt}
-          </Text>
-          <Text style={styles.price}>{formatMoney(game.price)}</Text>
-        </View>
+        <Text
+          style={[
+            styles.capTxt,
+            few && { color: colors.warning, fontWeight: '600' },
+            full && { color: colors.danger, fontWeight: '600' },
+          ]}
+          numberOfLines={1}
+        >
+          {capTxt}
+        </Text>
       </View>
 
       <View style={styles.gameFoot}>
-        <Text style={styles.gameId}>#{game.id}</Text>
+        <View style={styles.gameFootLevel}>
+          <LevelBadge level={game.skill_level} />
+        </View>
         <View style={[styles.miniBtn, full ? styles.miniBtnGhost : styles.miniBtnPrimary]}>
           {full ? <Icon name="clock-outline" size={15} color={colors.textMain} /> : null}
-          <Text style={[styles.miniBtnText, { color: full ? colors.textMain : colors.accentInk }]}>
+          <Text
+            style={[styles.miniBtnText, { color: full ? colors.textMain : colors.accentInk }]}
+            numberOfLines={1}
+          >
             {full ? 'Лист ожидания' : 'Подробнее'}
           </Text>
           {full ? null : <Icon name="arrow-right" size={15} color={colors.accentInk} />}
@@ -564,22 +692,41 @@ export function GameCard({ game, onPress }: { game: GameList; onPress: () => voi
 
 /* ---------------- Стили ---------------- */
 
-export const contentStyle: StyleProp<ViewStyle> = { padding: spacing.lg, paddingBottom: 112, gap: spacing.lg };
+export const contentStyle: StyleProp<ViewStyle> = {
+  padding: spacing.lg,
+  paddingBottom: 40,
+  gap: spacing.lg,
+};
+
+/** Контент экранов с нижней панелью: учитывает safe-area + высоту дока. */
+export function useTabContentStyle() {
+  const insets = useSafeAreaInsets();
+  return useMemo(
+    () => ({
+      padding: spacing.lg,
+      paddingBottom: 56 + insets.bottom + 24,
+      gap: spacing.lg,
+    }),
+    [insets.bottom],
+  );
+}
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bgDeep },
   appBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.bgDeep },
+  appGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 420 },
   card: {
-    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.lg,
     padding: spacing.xl,
+    overflow: 'hidden',
+    ...shadows.card,
   },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: 6 },
 
   btn: {
-    minHeight: 44,
+    minHeight: 46,
     paddingHorizontal: spacing.xl,
     borderRadius: radius.md,
     borderWidth: 1,
@@ -587,10 +734,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
+    overflow: 'hidden',
   },
-  btnSm: { minHeight: 34, paddingVertical: 6, paddingHorizontal: spacing.md },
+  btnSm: { minHeight: 36, paddingVertical: 6, paddingHorizontal: spacing.md },
   btnBlock: { alignSelf: 'stretch' },
-  btnText: { fontSize: 16, fontWeight: '600' },
+  btnText: { fontSize: 15.5, fontWeight: '600' },
 
   badge: {
     flexDirection: 'row',
@@ -602,13 +750,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
     alignSelf: 'flex-start',
+    flexShrink: 1,
+    maxWidth: '100%',
   },
   levelBadge: { borderWidth: 1 },
-  badgeText: { fontSize: 12, fontWeight: '600' },
-  dots: { flexDirection: 'row', gap: 2 },
-  dot: { width: 4, height: 4, borderRadius: 2 },
+  badgeText: { fontSize: 12, fontWeight: '600', flexShrink: 1 },
 
-  progress: { height: 7, borderRadius: radius.full, backgroundColor: 'rgba(100,116,139,0.22)', overflow: 'hidden' },
+  progress: { height: 7, borderRadius: radius.full, backgroundColor: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
   progressFill: { height: '100%', borderRadius: radius.full },
 
   skeleton: { backgroundColor: colors.surface3, borderRadius: radius.md },
@@ -620,16 +768,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.overlay,
     justifyContent: 'center',
-    padding: spacing.xl,
+    alignItems: 'center',
+    padding: spacing.lg,
   },
-  modalCard: {
-    backgroundColor: colors.bgScreen,
+  modalShell: {
+    width: '100%',
+    maxWidth: 520,
+    maxHeight: '88%',
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: colors.border2,
     borderRadius: radius.lg,
-    padding: spacing.xxl,
-    gap: spacing.sm,
+    overflow: 'hidden',
+    ...shadows.pop,
   },
+  modalCard: { padding: spacing.xl, gap: spacing.sm },
 
   banner: {
     flexDirection: 'row',
@@ -647,71 +800,110 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(148,163,184,0.12)',
+    borderBottomColor: colors.border,
   },
-  kvKey: { color: colors.textSub, fontSize: 14 },
+  kvKey: { color: colors.textSub, fontSize: 14, flexShrink: 1 },
   kvVal: { color: colors.textMain, fontSize: 14, fontWeight: '600', flexShrink: 1, textAlign: 'right' },
 
-  tabsRow: { gap: spacing.xs, borderBottomWidth: 1, borderBottomColor: colors.border },
-  tab: { paddingHorizontal: spacing.lg, paddingVertical: 10, alignItems: 'center' },
-  tabText: { color: colors.textSub, fontSize: 14, fontWeight: '600' },
-  tabTextActive: { color: colors.primary },
-  tabUnderline: { height: 2, alignSelf: 'stretch', marginTop: 8, borderRadius: 2, backgroundColor: 'transparent' },
+  tabsScroll: { flexGrow: 0 },
+  tabsRow: { gap: spacing.sm, paddingVertical: 2 },
+  tab: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: 9,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    backgroundColor: 'transparent',
+  },
+  tabActive: { backgroundColor: colors.surface2, borderColor: colors.border2 },
+  tabText: { color: colors.textSub, fontSize: 13.5, fontWeight: '600' },
+  tabTextActive: { color: colors.accent },
 
   header: {
-    backgroundColor: colors.bgScreen,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    overflow: 'hidden',
+    zIndex: 20,
   },
   headerInner: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     paddingHorizontal: spacing.lg,
-    height: 60,
+    height: 56,
   },
-  logo: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  logoText: { color: colors.textMain, fontSize: 18, fontWeight: '700', letterSpacing: -0.3 },
-  logoAccent: { color: colors.accent },
+  logo: { flexDirection: 'row', alignItems: 'center', gap: 9, flexShrink: 1 },
+  logoText: { color: colors.textMain, fontSize: 18, fontWeight: '700', letterSpacing: -0.3, fontFamily: fontDisplay },
+  logoAccent: { color: colors.accent2 },
   headerAvatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.20)',
   },
-  headerAvatarText: { color: colors.accentInk, fontWeight: '700', fontSize: 15 },
-  menuOverlay: { flex: 1, backgroundColor: 'rgba(11,17,32,0.4)' },
+  headerAvatarText: { color: colors.accentInk, fontWeight: '700', fontSize: 14 },
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(10,11,14,0.45)' },
   menu: {
     position: 'absolute',
-    top: 70,
+    top: 64,
     right: spacing.lg,
     width: 260,
-    backgroundColor: colors.surface,
+    maxWidth: '86%',
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderColor: colors.border2,
+    borderRadius: radius.md,
     padding: spacing.sm,
+    ...shadows.pop,
   },
-  menuItem: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: 12, paddingHorizontal: spacing.md, borderRadius: radius.md },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: 12,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.sm,
+  },
   menuIcon: { fontSize: 16 },
-  menuLabel: { color: colors.textMain, fontSize: 15 },
+  menuLabel: { color: colors.textMain, fontSize: 15, flexShrink: 1 },
 
-  gameCard: { gap: spacing.md, padding: spacing.lg },
-  gameCardPressed: { borderColor: colors.accent, backgroundColor: colors.surface2 },
+  gameCard: {
+    gap: spacing.md,
+    padding: spacing.lg,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  gameCardPressed: { borderColor: 'rgba(59,130,246,0.45)' },
   gameTop: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md },
-  gameTitle: { color: colors.textMain, fontSize: 16, fontWeight: '600', letterSpacing: -0.2 },
-  gameWhen: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
-  gameWhenText: { color: colors.meta, fontSize: 12, fontFamily: fontMono },
+  gameTopMain: { flex: 1, minWidth: 0, paddingRight: 92 },
+  gameTitle: { color: colors.textMain, fontSize: 17, fontWeight: '700', letterSpacing: -0.2, lineHeight: 22 },
+  gameWhen: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 },
+  gameWhenText: { color: colors.meta, fontSize: 11.5, fontFamily: fontMono, flexShrink: 1 },
+  priceBadge: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
+    zIndex: 2,
+    paddingHorizontal: 11,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(245,165,36,0.14)',
+    borderWidth: 1,
+    borderColor: 'rgba(245,165,36,0.38)',
+    maxWidth: 88,
+  },
+  priceBadgeText: { color: colors.gold, fontSize: 12.5, fontWeight: '700', fontFamily: fontMono },
   gameMeta: { gap: 7 },
-  gameMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  gameMetaText: { color: colors.muted, fontSize: 13, flexShrink: 1 },
-  capRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 7 },
-  capTxt: { color: colors.muted, fontSize: 12, fontFamily: fontMono },
-  price: { color: colors.gold, fontSize: 16, fontWeight: '700', fontFamily: fontMono },
-  gameFoot: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.md },
-  gameId: { color: colors.meta, fontSize: 12, fontFamily: fontMono },
+  gameMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minWidth: 0 },
+  gameMetaText: { color: colors.muted, fontSize: 13, flexShrink: 1, minWidth: 0 },
+  capBlock: { gap: 6 },
+  capTxt: { color: colors.muted, fontSize: 11.5, fontFamily: fontMono },
+  gameFoot: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: spacing.sm },
+  gameFootLevel: { flexShrink: 1, maxWidth: '42%', minWidth: 0 },
   miniBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -719,6 +911,8 @@ const styles = StyleSheet.create({
     minHeight: 36,
     paddingHorizontal: 13,
     borderRadius: radius.sm,
+    flexShrink: 0,
+    overflow: 'hidden',
   },
   miniBtnPrimary: { backgroundColor: colors.accent },
   miniBtnGhost: { backgroundColor: colors.surface2, borderWidth: 1, borderColor: colors.border },

@@ -4,18 +4,18 @@ import {
   type NativeSyntheticEvent,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   type TextInputKeyPressEventData,
   View,
 } from 'react-native';
+import { Text } from '../components/Text';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 import { api } from '../api/client';
 import { AuthLayout } from '../components/AuthLayout';
 import { Banner, Btn } from '../components/ui';
 import { formatMMSS, useAuth, useToast } from '../store';
-import { colors, radius, spacing } from '../theme';
+import { colors, fontFor, fontMono, radius, spacing } from '../theme';
 
 /** A3. Подтверждение email -> POST /register/verify-email/ */
 const CODE_LEN = 6;
@@ -67,7 +67,7 @@ export default function VerifyScreen() {
     try {
       const res = await api.verifyEmail({ email, code });
       login(email.split('@')[0], res.role === 'organizer' ? 'organizer' : 'player');
-      toast.push('Email подтверждён 🎉', 'success');
+      toast.push('Email подтверждён', 'success');
       const profile = await api.me().catch(() => null);
       nav.reset({ index: 0, routes: [{ name: profile?.id ? 'Tabs' : 'Onboarding' }] });
     } catch (err) {
@@ -109,11 +109,11 @@ export default function VerifyScreen() {
       }
     >
       {rateLimited ? (
-        <Banner kind="warning" icon="⏳">
+        <Banner kind="warning" icon="clock-outline">
           Не более 3 попыток в час. Попробуйте через 45 мин.
         </Banner>
       ) : error ? (
-        <Banner kind="error" icon="⚠️">
+        <Banner kind="error" icon="alert-outline">
           {error}
         </Banner>
       ) : null}
@@ -165,19 +165,20 @@ const styles = StyleSheet.create({
   otpRow: { flexDirection: 'row', gap: spacing.sm, justifyContent: 'center' },
   otpCell: {
     flex: 1,
+    minWidth: 0,
     maxWidth: 52,
     height: 56,
     textAlign: 'center',
     fontSize: 22,
-    fontWeight: '700',
     color: colors.textMain,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surface2,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
+    borderColor: colors.border2,
+    borderRadius: radius.md,
+    fontFamily: fontFor('mono', '700'),
   },
   rowBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap' },
-  timer: { color: colors.textSub, fontSize: 14 },
+  timer: { color: colors.textSub, fontSize: 13, fontFamily: fontMono, flexShrink: 1 },
   link: { color: colors.accent, fontWeight: '600' },
   back: { alignItems: 'center' },
 });
