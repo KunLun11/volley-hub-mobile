@@ -173,6 +173,8 @@ export interface GameList {
   set_scores?: SetScore[];
   team_1_sets_won?: number;
   team_2_sets_won?: number;
+  /** Фактическое начало игры (статус «Идёт»). */
+  started_at?: string | null;
   result_finalized_at?: string | null;
 }
 

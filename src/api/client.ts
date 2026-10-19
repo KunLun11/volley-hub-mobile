@@ -302,6 +302,7 @@ function adaptGame(g: Record<string, any>): GameList {
       : [],
     team_1_sets_won: Number(g.team_1_sets_won ?? 0),
     team_2_sets_won: Number(g.team_2_sets_won ?? 0),
+    started_at: (g.started_at as string | null) ?? null,
     result_finalized_at: (g.result_finalized_at as string | null) ?? null,
   };
 }
@@ -554,6 +555,9 @@ export const api = {
   publishGame: (id: number): Promise<unknown> => request(`/games/${id}/publish/`, { method: 'POST' }),
 
   closeRegistration: (id: number): Promise<unknown> => request(`/games/${id}/close-registration/`, { method: 'POST' }),
+
+  /** Организатор начинает игру: «Запись открыта/окончена» → «Идёт». */
+  startGame: (id: number): Promise<unknown> => request(`/games/${id}/start/`, { method: 'POST' }),
 
   cancelGame: (id: number): Promise<unknown> => request(`/games/${id}/cancel/`, { method: 'POST' }),
 

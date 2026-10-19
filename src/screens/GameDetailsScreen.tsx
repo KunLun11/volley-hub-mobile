@@ -316,17 +316,28 @@ export default function GameDetailsScreen() {
 
               {myStatus === 'registered' ? (
                 <>
+                  {detail.status === 3 ? (
+                    <Btn kind="secondary" onPress={doAttend} block>
+                      Я здесь — отметиться
+                    </Btn>
+                  ) : null}
                   <Btn kind="success" onPress={() => setPayModal(true)} block>
                     Оплатить {formatMoney(detail.price)}
                   </Btn>
-                  <Btn kind="danger" onPress={doCancel} disabled={(deadlineLeft ?? 0) <= 0} block>
-                    Отменить запись
-                  </Btn>
-                  {deadlineLeft !== null && deadlineLeft > 0 ? (
-                    <Text style={styles.deadline}>⏳ отмена доступна ещё {formatMs(deadlineLeft)}</Text>
-                  ) : (
-                    <Text style={styles.muted}>Отмена недоступна (менее 24ч до игры)</Text>
-                  )}
+                  {detail.status !== 3 ? (
+                    <>
+                      <Btn kind="danger" onPress={doCancel} disabled={(deadlineLeft ?? 0) <= 0} block>
+                        Отменить запись
+                      </Btn>
+                      {deadlineLeft !== null && deadlineLeft > 0 ? (
+                        <Text style={styles.deadline}>
+                          ⏳ отмена доступна ещё {formatMs(deadlineLeft)}
+                        </Text>
+                      ) : (
+                        <Text style={styles.muted}>Отмена недоступна (менее 24ч до игры)</Text>
+                      )}
+                    </>
+                  ) : null}
                 </>
               ) : null}
 
@@ -339,11 +350,11 @@ export default function GameDetailsScreen() {
                     <Btn kind="secondary" onPress={doAttend} block>
                       Я здесь — отметиться
                     </Btn>
-                  ) : (
+                  ) : detail.status === 1 || detail.status === 2 ? (
                     <Btn kind="danger" onPress={doCancel} disabled={(deadlineLeft ?? 0) <= 0} block>
                       Отменить запись
                     </Btn>
-                  )}
+                  ) : null}
                 </>
               ) : null}
 

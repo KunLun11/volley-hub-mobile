@@ -52,6 +52,7 @@ export default function ManageGameScreen() {
   const [winnerTeam, setWinnerTeam] = useState<number>(1);
   const [setScores, setSetScores] = useState<SetScore[]>([{ team_1: 0, team_2: 0 }]);
   const [savingResult, setSavingResult] = useState(false);
+  const [starting, setStarting] = useState(false);
 
   const load = () => {
     api.gameDetail(gid).then(setDetail).catch(() => undefined);
@@ -118,6 +119,21 @@ export default function ManageGameScreen() {
       toast.push(e instanceof Error ? e.message : 'Не удалось сохранить результат', 'error');
     } finally {
       setSavingResult(false);
+    }
+  }
+
+  /** Начать игру: «Запись открыта/окончена» → «Идёт» (attend, счёт, no-show). */
+  async function startGame() {
+    if (starting) return;
+    setStarting(true);
+    try {
+      await api.startGame(gid);
+      toast.push('Игра началась — игроки могут отметиться «Я здесь»', 'success');
+      load();
+    } catch (e) {
+      toast.push(e instanceof Error ? e.message : 'Не удалось начать игру', 'error');
+    } finally {
+      setStarting(false);
     }
   }
 
@@ -191,6 +207,11 @@ export default function ManageGameScreen() {
                 {(paid * (detail.price ?? 0)).toLocaleString('ru-RU')} ₽
               </Text>
             </Text>
+            {(detail.status === 1 || detail.status === 2) && (
+              <Btn small loading={starting} onPress={startGame}>
+                Начать игру
+              </Btn>
+            )}
             {canFinalize ? (
               <Btn kind="success" small onPress={openResultModal} disabled={players.length === 0}>
                 Зафиксировать результат
@@ -317,7 +338,7 @@ export default function ManageGameScreen() {
                       Удалить
                     </Btn>
                   ) : null}
-                  {(p.status === 1 || p.status === 2) && detail?.status === 4 ? (
+                  {(p.status === 1 || p.status === 2) && detail?.status === 3 ? (
                     <Btn
                       kind="secondary"
                       small

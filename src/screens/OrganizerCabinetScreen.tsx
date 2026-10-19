@@ -73,6 +73,8 @@ export default function OrganizerCabinetScreen() {
             { value: 'all', label: 'Все' },
             { value: 0, label: 'Черновики' },
             { value: 1, label: 'Опубликованные' },
+            { value: 2, label: 'Запись закрыта' },
+            { value: 3, label: 'Идёт' },
             { value: 4, label: 'Завершённые' },
             { value: 5, label: 'Отменённые' },
           ]}
@@ -126,10 +128,18 @@ export default function OrganizerCabinetScreen() {
                       <Btn kind="secondary" small onPress={() => nav.navigate('ManageGame', { id: g.id })}>
                         Участники
                       </Btn>
+                      <Btn small onPress={() => act(g.id, api.startGame, 'Игра началась')}>
+                        Начать
+                      </Btn>
                       <Btn kind="danger" small onPress={() => act(g.id, api.cancelGame, 'Игра отменена')}>
                         Отменить
                       </Btn>
                     </>
+                  ) : null}
+                  {g.status === 2 ? (
+                    <Btn small onPress={() => act(g.id, api.startGame, 'Игра началась')}>
+                      Начать
+                    </Btn>
                   ) : null}
                   {g.status === 2 || g.status === 3 ? (
                     <Btn kind="success" small onPress={() => nav.navigate('ManageGame', { id: g.id })}>
