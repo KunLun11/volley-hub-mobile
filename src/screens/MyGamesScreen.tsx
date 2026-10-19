@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/Text';
 import { useNavigation } from '@react-navigation/native';
 
 import { api } from '../api/client';
-import type { MyGame } from '../types';
+import type { MyGame, Paginated } from '../types';
 import {
   Btn,
   EmptyState,
@@ -18,34 +18,46 @@ import {
 import { colors, fontMono, spacing } from '../theme';
 import { useToast } from '../store';
 
-/** Б4. Мои игры -> GET /games/my-games/ */
+/** Б4. Мои игры -> GET /games/my-games/ (пагинация и вкладки на бэкенде) */
 type Tab = 'all' | 'upcoming' | 'past';
+const PAGE_SIZE = 20;
 
 export default function MyGamesScreen() {
   const nav = useNavigation<any>();
   const toast = useToast();
   const contentStyle = useTabContentStyle();
-  const [games, setGames] = useState<MyGame[] | null>(null);
+  const [games, setGames] = useState<Paginated<MyGame[]> | null>(null);
   const [tab, setTab] = useState<Tab>('all');
+  const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = () => {
-    api
-      .myGames()
-      .then(setGames)
-      .catch(() => setGames([]));
-  };
+  const load = useCallback(
+    (targetPage = 1, showSkeleton = true) => {
+      if (showSkeleton) setGames(null);
+      api
+        .myGamesPage({
+          scope: tab === 'all' ? undefined : tab,
+          page: targetPage,
+          page_size: PAGE_SIZE,
+        })
+        .then((data) => {
+          setGames(data);
+          setPage(targetPage);
+        })
+        .catch(() => setGames({ count: 0, next: null, previous: null, results: [] }));
+    },
+    [tab],
+  );
 
   useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    load(1);
+  }, [load]);
 
   const submitReview = async (gameId: number, matched: boolean) => {
     try {
       await api.submitReview(gameId, matched);
       toast.push('Спасибо! Отметка сохранена', 'success');
-      load();
+      load(page, false);
     } catch (e) {
       toast.push(e instanceof Error ? e.message : 'Не удалось сохранить оценку', 'error');
     }
@@ -60,11 +72,9 @@ export default function MyGamesScreen() {
   };
 
   const now = Date.now();
-  const filtered = (games ?? []).filter((m) => {
-    if (tab === 'upcoming') return new Date(m.game.date_time).getTime() > now;
-    if (tab === 'past') return new Date(m.game.date_time).getTime() <= now;
-    return true;
-  });
+  const list = games?.results ?? [];
+  const total = games?.count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <ScrollView
@@ -74,7 +84,7 @@ export default function MyGamesScreen() {
           refreshing={refreshing}
           onRefresh={() => {
             setRefreshing(true);
-            load();
+            load(page, false);
             setTimeout(() => setRefreshing(false), 700);
           }}
           tintColor={colors.primary}
@@ -99,14 +109,15 @@ export default function MyGamesScreen() {
             <Skeleton key={i} height={150} />
           ))}
         </View>
-      ) : filtered.length === 0 ? (
+      ) : list.length === 0 ? (
         <EmptyState
           text={tab === 'upcoming' ? 'Впереди пусто — самое время записаться!' : 'Игр в этой категории пока нет'}
           action={<Btn onPress={() => nav.navigate('Tabs', { screen: 'Games' })}>Смотреть открытые игры</Btn>}
         />
       ) : (
-        <View style={{ gap: spacing.lg }}>
-          {filtered.map((m) => {
+        <>
+          <View style={{ gap: spacing.lg }}>
+            {list.map((m) => {
             const past = new Date(m.game.date_time).getTime() <= now;
             return (
               <View key={m.participant_id} style={{ gap: spacing.sm }}>
@@ -129,7 +140,21 @@ export default function MyGamesScreen() {
               </View>
             );
           })}
-        </View>
+          </View>
+          {total > PAGE_SIZE ? (
+            <View style={styles.pager}>
+              <Btn kind="secondary" small disabled={!games?.previous} onPress={() => load(page - 1)}>
+                ← Назад
+              </Btn>
+              <Text style={styles.pagerText}>
+                Страница {page} из {totalPages}
+              </Text>
+              <Btn kind="secondary" small disabled={!games?.next} onPress={() => load(page + 1)}>
+                Вперёд →
+              </Btn>
+            </View>
+          ) : null}
+        </>
       )}
     </ScrollView>
   );
@@ -140,4 +165,12 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
   metaText: { color: colors.gold, fontWeight: '700', fontFamily: fontMono, flexShrink: 0 },
   reviewed: { color: colors.success, fontSize: 13, fontWeight: '600' },
+  pager: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  pagerText: { color: colors.textSub, fontSize: 13, fontFamily: fontMono },
 });

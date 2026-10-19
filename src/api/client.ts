@@ -63,6 +63,43 @@ export class ApiError extends Error {
   }
 }
 
+export interface GamePageFilters {
+  title?: string;
+  search?: string;
+  status?: number;
+  skill_level?: number | string;
+  gender?: number;
+  date_from?: string;
+  date_to?: string;
+  only_free?: boolean;
+  board?: boolean;
+  page?: number;
+  page_size?: number;
+}
+
+export interface MyGamesPageFilters {
+  game?: number;
+  title?: string;
+  scope?: 'upcoming' | 'past';
+  game_status?: number;
+  participant_status?: number;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  page_size?: number;
+}
+
+export interface OrganizedGamesPageFilters {
+  title?: string;
+  status?: number;
+  skill_level?: number | string;
+  gender?: number;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+  page_size?: number;
+}
+
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
 
@@ -242,6 +279,23 @@ async function requestList<T>(path: string): Promise<T[]> {
   const data = await request<Paginated<T[]> | T[]>(path);
   if (Array.isArray(data)) return data;
   return data.results ?? [];
+}
+
+async function requestPage<T>(path: string): Promise<Paginated<T[]>> {
+  const data = await request<Paginated<T[]> | T[]>(path);
+  if (Array.isArray(data)) {
+    return { count: data.length, next: null, previous: null, results: data };
+  }
+  return { ...data, results: data.results ?? [] };
+}
+
+function pageQuery(params: Record<string, string | number | boolean | undefined | null>): string {
+  const parts: string[] = [];
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === undefined || value === null || value === '' || value === false) return;
+    parts.push(`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
+  });
+  return parts.length ? `?${parts.join('&')}` : '';
 }
 
 async function safeDetail(res: Response): Promise<string> {
@@ -511,16 +565,18 @@ export const api = {
         : { type, profile: adaptProfile(res.profile ?? {}) };
     }),
 
-  games: (filters: {
-    skill_level?: number;
-    date_from?: string;
-    date_to?: string;
-    status?: number;
-    page?: number;
-  }): Promise<GameList[]> => {
-    const params: Record<string, string | number | undefined> = { ...filters };
-    if (params.status === undefined) params.status = 1; // по умолчанию — «запись открыта»
-    return requestList<Record<string, any>>(`/games/${buildQuery(params)}`).then((list) => list.map(adaptGame));
+  games: (filters: GamePageFilters = {}): Promise<GameList[]> =>
+    api.gamesPage(filters).then((page) => page.results),
+
+  gamesPage: (filters: GamePageFilters = {}): Promise<Paginated<GameList[]>> => {
+    const params: GamePageFilters = { ...filters };
+    if (params.status === undefined && !params.board) params.status = 1; // по умолчанию — «запись открыта»
+    return requestPage<Record<string, any>>(
+      `/games/${pageQuery(params as Record<string, string | number | boolean | undefined | null>)}`,
+    ).then((page) => ({
+      ...page,
+      results: page.results.map(adaptGame),
+    }));
   },
 
   /** Общее число открытых игр — для бейджа на вкладке «Игры». */
@@ -547,11 +603,27 @@ export const api = {
 
   attend: (id: number): Promise<unknown> => request(`/games/${id}/attend/`, { method: 'POST' }),
 
-  myGames: (): Promise<MyGame[]> =>
-    requestList<Record<string, any>>('/games/my-games/').then((list) => list.map(adaptMyGame)),
+  myGames: (filters: MyGamesPageFilters = {}): Promise<MyGame[]> =>
+    api.myGamesPage(filters).then((page) => page.results),
 
-  organizedGames: (): Promise<GameList[]> =>
-    requestList<Record<string, any>>('/games/organized/').then((list) => list.map(adaptGame)),
+  myGamesPage: (filters: MyGamesPageFilters = {}): Promise<Paginated<MyGame[]>> =>
+    requestPage<Record<string, any>>(
+      `/games/my-games/${pageQuery(filters as Record<string, string | number | boolean | undefined | null>)}`,
+    ).then((page) => ({
+      ...page,
+      results: page.results.map(adaptMyGame),
+    })),
+
+  organizedGames: (filters: OrganizedGamesPageFilters = {}): Promise<GameList[]> =>
+    api.organizedGamesPage(filters).then((page) => page.results),
+
+  organizedGamesPage: (filters: OrganizedGamesPageFilters = {}): Promise<Paginated<GameList[]>> =>
+    requestPage<Record<string, any>>(
+      `/games/organized/${pageQuery(filters as Record<string, string | number | boolean | undefined | null>)}`,
+    ).then((page) => ({
+      ...page,
+      results: page.results.map(adaptGame),
+    })),
 
   createGame: (body: CreateGame): Promise<GameList> =>
     request<Record<string, any>>('/games/', { method: 'POST', body: JSON.stringify(body) }).then(adaptGame),

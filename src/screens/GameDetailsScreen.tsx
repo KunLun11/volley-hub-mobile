@@ -72,7 +72,7 @@ export default function GameDetailsScreen() {
       .catch(() => undefined);
     if (isAuth) {
       api
-        .myGames()
+        .myGames({ game: gid })
         .then((mine) => {
           const m = mine.find((x) => x.game.id === gid);
           if (m) setMyStatus(m.participant_status >= 2 ? 'confirmed' : 'registered');
