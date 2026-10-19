@@ -157,6 +157,13 @@ export const spacing = {
   xxl: 24,
 } as const;
 
+/** Плавающий нижний док (pill): высота и отступ от краёв/низа экрана.
+ *  Используется в навигации, отступе контента и позиции тостов. */
+export const dock = {
+  height: 64,
+  margin: 14,
+} as const;
+
 export const fontSize = {
   h1: 28,
   h2: 22,

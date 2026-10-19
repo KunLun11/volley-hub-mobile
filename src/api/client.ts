@@ -523,6 +523,12 @@ export const api = {
     return requestList<Record<string, any>>(`/games/${buildQuery(params)}`).then((list) => list.map(adaptGame));
   },
 
+  /** Общее число открытых игр — для бейджа на вкладке «Игры». */
+  gamesCount: (): Promise<number> =>
+    request<Paginated<Record<string, any>[]> | Record<string, any>[]>('/games/?status=1').then((data) =>
+      Array.isArray(data) ? data.length : data.count ?? data.results?.length ?? 0,
+    ),
+
   gameDetail: (id: number): Promise<GameDetail> =>
     request<Record<string, any>>(`/games/${id}/`).then(adaptGameDetail),
 

@@ -4,7 +4,7 @@ import { Text } from '../components/Text';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, shadows, spacing } from '../theme';
+import { colors, dock, radius, shadows, spacing } from '../theme';
 
 export interface ToastItem {
   id: number;
@@ -33,7 +33,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={value}>
       {children}
-      <View style={[styles.stack, { bottom: insets.bottom + 72 }]} pointerEvents="box-none">
+      <View
+        style={[styles.stack, { bottom: insets.bottom + dock.margin + dock.height + 12 }]}
+        pointerEvents="box-none"
+      >
         {toasts.map((t) => (
           <ToastView key={t.id} toast={t} />
         ))}

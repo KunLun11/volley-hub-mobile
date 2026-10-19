@@ -9,6 +9,7 @@ import {
   ScrollView,
   type StyleProp,
   StyleSheet,
+  type TextStyle,
   View,
   type ViewStyle,
 } from 'react-native';
@@ -28,6 +29,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   avatarHue,
   colors,
+  dock,
   fontDisplay,
   fontMono,
   gradients,
@@ -65,12 +67,15 @@ export function Icon({
   name,
   size = 18,
   color = colors.muted,
+  style,
 }: {
   name: IconName;
   size?: number;
   color?: string;
+  /** Доп. стиль глифа (например, textShadow для синего свечения). */
+  style?: StyleProp<TextStyle>;
 }) {
-  return <MaterialCommunityIcons name={name} size={size} color={color} />;
+  return <MaterialCommunityIcons name={name} size={size} color={color} style={style} />;
 }
 
 /* ---------------- Базовые контейнеры ---------------- */
@@ -698,13 +703,14 @@ export const contentStyle: StyleProp<ViewStyle> = {
   gap: spacing.lg,
 };
 
-/** Контент экранов с нижней панелью: учитывает safe-area + высоту дока. */
+/** Контент экранов с нижней панелью: учитывает safe-area + высоту дока
+ *  (плавающий pill: высота + отступ от низа + зазор над доком). */
 export function useTabContentStyle() {
   const insets = useSafeAreaInsets();
   return useMemo(
     () => ({
       padding: spacing.lg,
-      paddingBottom: 56 + insets.bottom + 24,
+      paddingBottom: dock.height + insets.bottom + dock.margin + 18,
       gap: spacing.lg,
     }),
     [insets.bottom],
