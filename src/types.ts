@@ -327,6 +327,12 @@ export interface UserCreatePayload {
   password: string;
   role: string; // 'player' | 'organizer' | 'coach'
   phone: string;
+  /** Обязательное согласие на обработку персональных данных (152-ФЗ). */
+  personal_data_consent: boolean;
+  /** Версия политики/согласия, с которой ознакомился пользователь. */
+  personal_data_consent_version?: string;
+  /** Отдельное необязательное согласие на рекламные сообщения. */
+  marketing_consent?: boolean;
 }
 
 export interface VerifyEmailPayload {

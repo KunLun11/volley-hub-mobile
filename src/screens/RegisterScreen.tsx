@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../components/Text';
 import { useNavigation } from '@react-navigation/native';
 
@@ -8,6 +8,7 @@ import { api } from '../api/client';
 import { AuthLayout } from '../components/AuthLayout';
 import { Banner, Btn, Icon, type IconName } from '../components/ui';
 import { Field, Input } from '../components/form';
+import { CONSENT_VERSION, legalUrl } from '../lib/legal';
 import { colors, radius, spacing } from '../theme';
 
 /** A2. Регистрация шаг 1 -> POST /register/user/ */
@@ -22,6 +23,9 @@ export default function RegisterScreen() {
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [pdConsent, setPdConsent] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [consentError, setConsentError] = useState<string | null>(null);
 
   function maskPhone(raw: string): string {
     let d = raw.replace(/\D/g, '');
@@ -48,11 +52,24 @@ export default function RegisterScreen() {
   async function onSubmit() {
     setEmailError(null);
     setGeneralError(null);
+    setConsentError(null);
     const v = validate();
     if (v) return setGeneralError(v);
+    // Согласие на обработку ПДн — обязательное условие регистрации.
+    if (!pdConsent) {
+      return setConsentError('Отметьте согласие на обработку персональных данных');
+    }
     setLoading(true);
     try {
-      await api.register({ email, password, role, phone });
+      await api.register({
+        email,
+        password,
+        role,
+        phone,
+        personal_data_consent: true,
+        personal_data_consent_version: CONSENT_VERSION,
+        marketing_consent: marketingConsent,
+      });
       await AsyncStorage.setItem('va_reg_email', email);
       nav.navigate('Verify', { email });
     } catch (err) {
@@ -136,6 +153,39 @@ export default function RegisterScreen() {
           <Input value={confirm} onChangeText={setConfirm} secureTextEntry autoCapitalize="none" />
         </Field>
 
+        <View style={styles.consentBlock}>
+          <ConsentCheckbox
+            checked={pdConsent}
+            onToggle={() => {
+              setPdConsent((v) => !v);
+              setConsentError(null);
+            }}
+            error={Boolean(consentError)}
+          >
+            Я принимаю{' '}
+            <Text style={styles.consentLink} onPress={() => Linking.openURL(legalUrl('/legal/terms'))}>
+              Пользовательское соглашение
+            </Text>{' '}
+            и даю{' '}
+            <Text style={styles.consentLink} onPress={() => Linking.openURL(legalUrl('/legal/consent'))}>
+              согласие на обработку персональных данных
+            </Text>{' '}
+            в соответствии с{' '}
+            <Text style={styles.consentLink} onPress={() => Linking.openURL(legalUrl('/legal/privacy'))}>
+              Политикой
+            </Text>
+            .
+          </ConsentCheckbox>
+          {consentError ? (
+            <Text style={styles.consentError}>
+              {consentError}
+            </Text>
+          ) : null}
+          <ConsentCheckbox checked={marketingConsent} onToggle={() => setMarketingConsent((v) => !v)}>
+            Согласен получать информационные и рекламные сообщения (необязательно).
+          </ConsentCheckbox>
+        </View>
+
         <Btn onPress={onSubmit} loading={loading} block>
           Создать аккаунт
         </Btn>
@@ -197,6 +247,55 @@ const styles = StyleSheet.create({
   roleCaption: { color: colors.textSub, fontSize: 11.5, textAlign: 'center', lineHeight: 15 },
   eye: { position: 'absolute', right: 6, top: 4, padding: 10 },
   footer: { alignItems: 'center' },
+  consentBlock: { gap: 10 },
+  consentRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  consentBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  consentBoxOn: { borderColor: colors.accent, backgroundColor: colors.infoBg },
+  consentBoxError: { borderColor: colors.danger },
+  consentText: { flex: 1, color: colors.textSub, fontSize: 12.5, lineHeight: 18 },
+  consentLink: { color: colors.accent, fontWeight: '600' },
+  consentError: { color: colors.danger, fontSize: 12 },
   footerText: { color: colors.textSub, fontSize: 15 },
   link: { color: colors.accent, fontWeight: '600' },
 });
+
+/** Чекбокс для юридических согласий (текст с интерактивными ссылками). */
+function ConsentCheckbox({
+  checked,
+  onToggle,
+  error,
+  children,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+  error?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.consentRow}>
+      <Pressable
+        onPress={onToggle}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked }}
+        style={[styles.consentBox, checked && styles.consentBoxOn, error && styles.consentBoxError]}
+      >
+        {checked ? <Icon name="check" size={14} color={colors.accentInk} /> : null}
+      </Pressable>
+      <Text style={styles.consentText}>{children}</Text>
+    </View>
+  );
+}
