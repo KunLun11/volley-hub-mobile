@@ -508,7 +508,7 @@ export function AppHeader() {
         <Pressable onPress={() => nav.navigate('Tabs')} style={styles.logo}>
           <Icon name="volleyball" size={23} color={colors.accent} />
           <Text style={styles.logoText} numberOfLines={1}>
-            Volley<Text style={styles.logoAccent}>Hub</Text>
+            Voll<Text style={styles.logoAccent}>Mira</Text>
           </Text>
         </Pressable>
         <View style={{ flex: 1 }} />

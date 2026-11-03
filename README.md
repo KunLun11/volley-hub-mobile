@@ -1,7 +1,7 @@
 # 🏐 VolleyApp — мобильное приложение (React Native + Expo + TypeScript)
 
 Мобильная версия сервиса записи на волейбольные игры. Реализует те же экраны и
-основной функционал, что и веб-SPA `volley-hub-frontend`, и работает с тем же
+основной функционал, что и веб-SPA `vollmira-frontend`, и работает с тем же
 Django-бэкендом (`/api/v1/`).
 
 ## Почему React Native + Expo, а не Flutter
@@ -50,7 +50,7 @@ Django-бэкендом (`/api/v1/`).
 ## Быстрый старт
 
 ```bash
-cd volley-hub-mobile
+cd vollmira-mobile
 npm install
 
 # 1) укажите адрес бэкенда
@@ -74,13 +74,13 @@ npm start
 | Android-эмулятор | `http://10.0.2.2:8000/api/v1` |
 | iOS-симулятор | `http://localhost:8000/api/v1` |
 | Физический телефон (та же Wi-Fi сеть, что у ПК) | `http://<IP-компьютера>:8000/api/v1` |
-| Прод | `https://volley-hub.ru/api/v1` |
+| Прод | `https://vollmira.ru/api/v1` |
 
 Бэкенд должен быть доступен с устройства. Для локального запуска поднимайте Django
 на `0.0.0.0:8000`:
 
 ```bash
-cd ../volley-hub-backend
+cd ../vollmira-backend
 uv run python manage.py runserver 0.0.0.0:8000
 ```
 
@@ -148,7 +148,7 @@ tar xzf jdk17.tar.gz && rm jdk17.tar.gz
 Настроить окружение и сгенерировать нативный проект:
 
 ```bash
-cd volley-hub-mobile
+cd vollmira-mobile
 export JAVA_HOME=$(ls -d ~/jdk/jdk-17*)      # именно JDK 17, НЕ jbr от Android Studio
 export ANDROID_HOME=~/Android/Sdk
 export ANDROID_SDK_ROOT=$ANDROID_HOME
@@ -202,7 +202,7 @@ npm run web
 ## Структура проекта
 
 ```
-volley-hub-mobile/
+vollmira-mobile/
 ├── App.tsx                     # провайдеры (SafeArea, Auth, Toast) + навигация
 ├── index.ts                    # registerRootComponent
 ├── app.json                    # конфиг Expo (name, slug, permissions, plugins)

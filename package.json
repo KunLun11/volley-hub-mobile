@@ -1,9 +1,9 @@
 {
-  "name": "volley-hub-mobile",
+  "name": "vollmira-mobile",
   "version": "0.1.0",
   "private": true,
   "main": "index.ts",
-  "description": "VolleyHub — мобильное приложение (React Native + Expo + TypeScript)",
+  "description": "VollMira — мобильное приложение (React Native + Expo + TypeScript)",
   "scripts": {
     "start": "expo start",
     "android": "expo run:android",

@@ -1,7 +1,7 @@
 /* ============================================================
    API-слой мобильного приложения.
 
-   Полностью повторяет volley-hub-frontend/src/api/client.ts,
+   Полностью повторяет vollmira-frontend/src/api/client.ts,
    но:
    - базовый URL абсолютный (задаётся через EXPO_PUBLIC_API_URL);
    - токены хранятся в AsyncStorage (а не в localStorage);
@@ -52,7 +52,7 @@ const ACCESS_KEY = 'va_access';
 const REFRESH_KEY = 'va_refresh';
 
 /** Базовый URL API. Пример .env: EXPO_PUBLIC_API_URL=http://10.0.2.2:8000/api/v1 */
-export const API_BASE = (process.env.EXPO_PUBLIC_API_URL ?? 'https://volley-hub.ru/api/v1').replace(/\/+$/, '');
+export const API_BASE = (process.env.EXPO_PUBLIC_API_URL ?? 'https://vollmira.ru/api/v1').replace(/\/+$/, '');
 
 export class ApiError extends Error {
   status: number;

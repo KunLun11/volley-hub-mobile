@@ -32,7 +32,7 @@ export function AuthLayout({
           <View style={styles.brand}>
             <Icon name="volleyball" size={40} color={colors.accent} />
             <Text style={styles.brandText}>
-              Volley<Text style={styles.brandAccent}>Hub</Text>
+              Voll<Text style={styles.brandAccent}>Mira</Text>
             </Text>
           </View>
           <Text style={styles.title}>{title}</Text>
